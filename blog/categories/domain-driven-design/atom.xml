@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Domain-driven Design | Josh Kodroff, Code Craftsman]]></title>
+  <link href="http://jkodroff.github.io/blog/categories/domain-driven-design/atom.xml" rel="self"/>
+  <link href="http://jkodroff.github.io/"/>
+  <updated>2015-07-25T11:49:38-04:00</updated>
+  <id>http://jkodroff.github.io/</id>
+  <author>
+    <name><![CDATA[Josh Kodroff]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[DDD Lesson &#8211; Break Out Your CRUD]]></title>
+    <link href="http://jkodroff.github.io/2013/04/21/ddd-lesson-break-out-your-crud/"/>
+    <updated>2013-04-21T00:00:00-04:00</updated>
+    <id>http://jkodroff.github.io/2013/04/21/ddd-lesson-break-out-your-crud</id>
+    <content type="html"><![CDATA[<p>In my view, there&#8217;s 2 main principles that distinguish Domain-driven design as an approach to solving problems:</p>
+
+<ol>
+<li>All solutions to problems are framed in terms of the value delivered to the stakeholders for the effort required.</p></li>
+<li>The core of the code is a model of the business process, and it <a href="https://en.wikipedia.org/wiki/Code_refactoring">evolves with time</a> as the  developers&#8217; understanding of the business with time.</li>
+</ol>
+
+
+<p>There&#8217;s other principles involved, but these two are the most relevant fo this particular post.</p>
+
+<p>Sounds pretty generic, right?  So how do we implement this?  You may find, as I did, that direct advice (i.e. rules of thumb) on how to write domain-driven code is tough to find.  DDD is a very powerful technique for software development, but even though it&#8217;s has been popular for about 10 years now best practices are not yet widely understood.  There&#8217;s a long line of developers burned by DDD because they didn&#8217;t have a proper understanding of where domain models are appropriate.  They end up writing more code than they need to, and DDD gets a bad rap.  That&#8217;s a bummer because when it&#8217;s applied with wisdom, DDD really can make one&#8217;s life as a coder easier.</p>
+
+<p>Let&#8217;s say we have the concept of an order in our domain. For simplicity&#8217;s sake, it takes 1 address for both billing and shipping.  All fields are required for the address.  It also has a status (InProgress, Placed, Shipped, or Cancelled) and we have some fairly intuitive rules about which status changes are valid (e.g. an order cannot be cancelled after it&#8217;s shipped).</p>
+
+<p>Given the rules above, we start coding and come up with an interface like this. We&#8217;re showing the interface here for brevity &#8211; the implementation should be fairly obvious:</p>
+
+<pre><code>public interface IOrder {
+
+    void SetAddress(string streetNumber, string city, string state, string zip);
+
+    // throw an exception if status == Shipped or Cancelled
+    void Place();
+
+    // throw an exception if status == In Progress or Cancelled
+    void MarkShipped();
+
+    // throw an exception if status == Shipped
+    void Cancel();
+}
+</code></pre>
+
+<p>Stop. Do you see the problem here?</p>
+
+<p>Think ahead a little bit. We need to both persist and edit this thing in the UI. We want to obey the <a href="http://en.wikipedia.org/wiki/Single_responsibility_principle">Single Responsibility Principle</a> so we don&#8217;t want to re-use our domain class for editing or persistence since those are different responsibilities. Thus, we end up with some additional classes: maybe <code>OrderRepository</code> for persisting, which has to map the attribs to a class like <code>OrderData</code> which is compatible with our ORM, and then we need to edit the thing in the UI so we make an <code>OrderViewModel</code> where we declare which fields are required in the UI. And now, we&#8217;ve got a LOT of code on our hands which in turn becomes a PITA to maintain. This is not what we hoped for when we ventured down the path of DDD. It was supposed to make our lives easier and now we have tons of code and a headache. (And possibly a heartarche depending on how passionate we are about our craft&#8230;)</p>
+
+<p>So what did we do wrong? <em>We made the assumption that Order has to be one object.</em> It&#8217;s totally understandable &#8211; we&#8217;re making a model of an order, and in the paper world an order is one sheet of paper. However, if we naively carry the assumption that concepts map 1:1 to classes in our domain model we may well be making things worse. Here&#8217;s what we do instead:</p>
+
+<p>The address on the order is just straight CRUD. There&#8217;s no behavior here other than validating that the required fields are there and we&#8217;ve got plenty of tools that will do this for us (e.g. DataAnnotations in the .NET world). Thus, we can use a single class to represent our persistence model all the way up to the UI. One class fills all of our needs as far as the address goes:</p>
+
+<pre><code>public class OrderAddress {
+    public Guid Id { get; set; }
+
+    [Required]
+    public string StreetNumber { get; set; }
+
+    [Required]
+    public string City { get; set; }
+
+    [Required]
+    public string State { get; set; }
+
+    [Required]
+    public string Zip { get; set; }
+}
+</code></pre>
+
+<p>No need for unit tests on this class since there&#8217;s no behavior to test. We can safely assume that validation is handled correctly by our client framework (e.g. jQuery validation in ASP.NET MVC) or at worst our database. (If we can&#8217;t safely assume this we may need to consider some new tools&#8230;)</p>
+
+<p>As for the status changes, now we end up with this (same as before, but no <code>SetAddress()</code>):</p>
+
+<pre><code>public interface IOrderStatus {
+
+    // throw an exception if status == Shipped or Cancelled
+    void Place();
+
+    // throw an exception if status == In Progress or Cancelled
+    void MarkShipped();
+
+    // throw an exception if status == Shipped
+    void Cancel();
+}
+</code></pre>
+
+<p>This also means we persist OrderAddress and OrderStatus as separate tables (or collections if you&#8217;re using a document database). Because they&#8217;re separate tables, we&#8217;ve also decreased our risk of concurrency issues in addition to making maintenance easier by decoupling. Now the code benefits from a true domain model where it&#8217;s actually helpful: where there&#8217;s behavior. And we can use plain old CRUD like we did before when there&#8217;s no behavior, just data.</p>
+
+<p>So, we can summarize the lessons in this post in the following rules of thumb:</p>
+
+<ol>
+<li>If the current state of the data is not dependent upon the previous state of the data, then it&#8217;s simple CRUD and we do not need a domain model. We should use the same class from the DB all the way through the UI.</li>
+<li>If the current state of the data is dependent upon the previous state of the data, then it&#8217;s a state machine, has behavior, and we probably will benefit from a domain model.  Our behavior should be encapsulated in a class which has all methods and no mutators (setters).</li>
+<li>Break apart classes (and tables/document collections) accordingly in order to separate the state and behavior so we don&#8217;t write unnecessary code and create unnecessary coupling.</li>
+</ol>
+
+
+<p>This is something I wish I had understood when I started doing DDD.  I hope this post clarifies things for you and saves you some trouble.</p>
+]]></content>
+  </entry>
+  
+</feed>
