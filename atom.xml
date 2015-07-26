@@ -1,29 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-<<<<<<< HEAD
   <title><![CDATA[Josh Kodroff, Code Craftsman]]></title>
   <link href="http://jkodroff.github.io/atom.xml" rel="self"/>
   <link href="http://jkodroff.github.io/"/>
-  <updated>2015-07-26T18:27:45-04:00</updated>
+  <updated>2015-07-26T18:29:10-04:00</updated>
   <id>http://jkodroff.github.io/</id>
   <author>
     <name><![CDATA[Josh Kodroff]]></name>
-=======
-  <title><![CDATA[My Octopress Blog]]></title>
-  <link href="http://jkodroff.github.io/atom.xml" rel="self"/>
-  <link href="http://jkodroff.github.io/"/>
-  <updated>2015-07-25T10:10:18-04:00</updated>
-  <id>http://jkodroff.github.io/</id>
-  <author>
-    <name><![CDATA[Your Name]]></name>
->>>>>>> 37f8f9c359ab71de61fd5cada666254f254e6537
     
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
   
-<<<<<<< HEAD
   <entry>
     <title type="html"><![CDATA[Getting More Inolved With OSS via Up for Grabs]]></title>
     <link href="http://jkodroff.github.io/2015/06/11/getting-more-inolved-with-oss-via-up-for-grabs/"/>
@@ -281,6 +270,4 @@
 ]]></content>
   </entry>
   
-=======
->>>>>>> 37f8f9c359ab71de61fd5cada666254f254e6537
 </feed>
