@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: Domain-driven Design | Josh Kodroff, Code Craftsman]]></title>
-  <link href="http://jkodroff.github.io/blog/categories/domain-driven-design/atom.xml" rel="self"/>
-  <link href="http://jkodroff.github.io/"/>
-  <updated>2015-07-26T18:29:10-04:00</updated>
-  <id>http://jkodroff.github.io/</id>
+  <link href="http://joshkodroff.com/blog/categories/domain-driven-design/atom.xml" rel="self"/>
+  <link href="http://joshkodroff.com/"/>
+  <updated>2015-07-28T07:08:59-04:00</updated>
+  <id>http://joshkodroff.com/</id>
   <author>
     <name><![CDATA[Josh Kodroff]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[DDD Lesson &#8211; Break Out Your CRUD]]></title>
-    <link href="http://jkodroff.github.io/2013/04/21/ddd-lesson-break-out-your-crud/"/>
+    <link href="http://joshkodroff.com/2013/04/21/ddd-lesson-break-out-your-crud/"/>
     <updated>2013-04-21T00:00:00-04:00</updated>
-    <id>http://jkodroff.github.io/2013/04/21/ddd-lesson-break-out-your-crud</id>
+    <id>http://joshkodroff.com/2013/04/21/ddd-lesson-break-out-your-crud</id>
     <content type="html"><![CDATA[<p>In my view, there&#8217;s 2 main principles that distinguish Domain-driven design as an approach to solving problems:</p>
 
 <ol>

@@ -1,4 +1,4 @@
 User-agent: *
 Disallow: 
 
-Sitemap: http://jkodroff.github.io/sitemap.xml 
+Sitemap: http://joshkodroff.com/sitemap.xml 
