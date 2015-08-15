@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>http://joshkodroff.com/blog/2015/08/08/making-entity-framework-more-testable/</loc>
+    <lastmod>2015-08-08T09:56:22-04:00</lastmod>
+  </url>
+  <url>
     <loc>http://joshkodroff.com/2015/06/11/getting-more-inolved-with-oss-via-up-for-grabs/</loc>
     <lastmod>2015-06-11T00:00:00-04:00</lastmod>
   </url>
@@ -35,5 +39,11 @@
   </url>
   <url>
     <loc>http://joshkodroff.com/blog/categories/uncategorized/</loc>
+  </url>
+  <url>
+    <loc>http://joshkodroff.com/blog/categories/entityframework/</loc>
+  </url>
+  <url>
+    <loc>http://joshkodroff.com/blog/categories/testing/</loc>
   </url>
 </urlset>

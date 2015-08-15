@@ -9,7 +9,7 @@
   <meta name="author" content="Josh Kodroff">
 
   
-  <meta name="description" content="I attended the DotNetFringe conference in Portland in April, and I met some some fantastic people, learned a ton, and had an overall great time. The &hellip;">
+  <meta name="description" content="Abstract For developers using Entity Framework, unit testing code that depends on the DbContext class is not the easiest thing. If we&rsquo;re &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -58,6 +58,445 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/08/08/making-entity-framework-more-testable/">Making Entity Framework More Unit-Testable</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2015-08-08T09:56:22-04:00" pubdate data-updated="true">Aug 8th, 2015</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h2>Abstract</h2>
+
+<p>For developers using <a href="https://entityframework.codeplex.com/">Entity Framework</a>, unit testing code that depends on the <code>DbContext</code> class is not the easiest thing.  If we&rsquo;re interested in doing unit testing, we need to be able to use an in-memory (&ldquo;fake&rdquo; in <a href="http://martinfowler.com/articles/mocksArentStubs.html">Martin Fowler&rsquo;s terminology</a>) version of <code>DbContext</code> comprised of lists of objects so that our tests do not hit the database.  This series of posts takes you through my process in getting to a facade on top of Entity Framework that results in testable code and tests that are fast to write.</p>
+
+<p><em>Note:</em> The issues described are only known to apply to Entity Framework &lt;= 6.x.  EF 7 is a complete rewrite, so it&rsquo;s possible that these issues have since been addressed.</p>
+
+<h2>tl;dr</h2>
+
+<p>You can jump directly to <a href="https://github.com/jkodroff/ef-testable">the code</a>, or you can reference <a href="https://www.nuget.org/packages/EntityFrameworkTestable/">the client code NuGet package</a> in your main assemblies and <a href="https://www.nuget.org/packages/EntityFrameworkTestable.Testing/">the testing code NuGet package</a> in your testing assemblies.</p>
+
+<h2>Part 1 - Getting to a Reusable Abstraction</h2>
+
+<p>We want to depend on interfaces instead of concrete implementations, per the &ldquo;D&rdquo; (<a href="https://en.wikipedia.org/wiki/Dependency_inversion_principle">Dependency Inversion</a>) in <a href="https://en.wikipedia.org/wiki/SOLID_(object-oriented_design">SOLID</a>).  So how can we do this with Entity Framework?</p>
+
+<p>Let&rsquo;s suppose we have the following <code>DbContext</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">MyDbContext</span> <span class="p">:</span> <span class="n">DbContext</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">public</span> <span class="n">DbSet</span><span class="p">&lt;</span><span class="n">Order</span><span class="p">&gt;</span> <span class="n">Orders</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>  <span class="c1">// a bunch of other tables...</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>&hellip; we might be consuming it like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="kt">var</span> <span class="n">db</span> <span class="p">=</span> <span class="k">new</span> <span class="n">MyDbContext</span><span class="p">();</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">order</span> <span class="p">=</span> <span class="n">db</span><span class="p">.</span><span class="n">Orders</span><span class="p">.</span><span class="n">Single</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">.</span><span class="n">Id</span> <span class="p">==</span> <span class="n">id</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>&hellip; so if we naively extract an interface, then it will lead to something like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="k">public</span> <span class="k">interface</span> <span class="n">IMyDbContext</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="n">DbSet</span><span class="p">&lt;</span><span class="n">Order</span><span class="p">&gt;</span> <span class="n">Orders</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>  <span class="c1">// a bunch of other tables</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And that&rsquo;s not so good.</p>
+
+<p>We have to change <code>IMyDbContext</code> along with <code>MyDbContext</code> every time we add a table to the database: We would have to add <code>DbSet&lt;T&gt;</code> properties to both the interface and the implementation.  We also cannot reuse this code across projects because our interface is tightly coupled to the particular database schema we&rsquo;re using.</p>
+
+<p>Fortunately, <code>DbContext</code> exposes a <code>Set&lt;T&gt;()</code> method (<a href="https://msdn.microsoft.com/en-us/library/Gg696521%28v=VS.113%29.aspx">MSDN Docs</a>) which can help us solve this problem.  So, if we change how we consume our <code>DbContext</code> from <code>db.Orders</code> to <code>db.Set&lt;Order&gt;()</code>, we can now define our interface like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="k">public</span> <span class="k">interface</span> <span class="n">IDataSession</span> <span class="p">:</span> <span class="n">IDisposable</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="n">IDbSet</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="n">Set</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;()</span> <span class="k">where</span> <span class="n">T</span> <span class="p">:</span> <span class="n">class</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// We also obviously need to persist our changes, so:</span>
+</span><span class='line'>  <span class="k">void</span> <span class="nf">SaveChanges</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// I also have use cases where I need to drop down to raw SQL, so:</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="nf">SqlCommand</span><span class="p">(</span><span class="kt">string</span> <span class="n">sql</span><span class="p">,</span> <span class="k">params</span> <span class="kt">object</span><span class="p">[]</span> <span class="n">parameters</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The name change on the interface from <code>IMyDbContext</code> to <code>IDataSession</code> is intentional: it reflects that this interface is no longer a representation of a <em>particular</em> database context (i.e. <code>MyDbContext</code>), but <em>any</em> database context.  And we can create an implementation for it like so:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">EntityDataSession</span> <span class="p">:</span> <span class="n">IDataSession</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="c1">// This is the EF class, not ours:</span>
+</span><span class='line'>    <span class="k">private</span> <span class="n">DbContext</span> <span class="n">_dbContext</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">EntityDataSession</span><span class="p">(</span><span class="n">DbContext</span> <span class="n">dbContext</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">_dbContext</span> <span class="p">=</span> <span class="n">dbContext</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="k">void</span> <span class="nf">Dispose</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">_dbContext</span><span class="p">.</span><span class="n">Dispose</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">IDbSet</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="n">Set</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;()</span> <span class="k">where</span> <span class="n">T</span> <span class="p">:</span> <span class="k">class</span>
+</span><span class='line'>    <span class="err">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">_dbContext</span><span class="p">.</span><span class="n">Set</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="k">void</span> <span class="nf">SaveChanges</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">_dbContext</span><span class="p">.</span><span class="n">SaveChanges</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">int</span> <span class="nf">SqlCommand</span><span class="p">(</span><span class="kt">string</span> <span class="n">sql</span><span class="p">,</span> <span class="k">params</span> <span class="kt">object</span><span class="p">[]</span> <span class="n">parameters</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">_dbContext</span><span class="p">.</span><span class="n">Database</span><span class="p">.</span><span class="n">ExecuteSqlCommand</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="n">parameters</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We can use our DI container to give us an <code>EntityDataSession</code> with whatever <code>DbContext</code> we want, and we can reuse this code across projects.  The code below is for <a href="http://docs.structuremap.net/">StructureMap</a>) but your DI container should have similar constructs:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="c1">// Somewhere in your application&#39;s startup code:</span>
+</span><span class='line'><span class="n">For</span><span class="p">&lt;</span><span class="n">IDataSession</span><span class="p">&gt;().</span><span class="n">Use</span><span class="p">&lt;</span><span class="n">EntityDataSession</span><span class="p">&gt;();</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Because EntityDataSession takes a DbContext as a constructor param:</span>
+</span><span class='line'><span class="n">For</span><span class="p">&lt;</span><span class="n">System</span><span class="p">.</span><span class="n">Data</span><span class="p">.</span><span class="n">Entity</span><span class="p">.</span><span class="n">DbContext</span><span class="p">&gt;().</span><span class="n">Use</span><span class="p">&lt;</span><span class="n">MyDbContext</span><span class="p">&gt;();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And we might consume our code like this.  (Sending your data model directly to a view is not advisable for production-quality code, but this is just an example):</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">SomeController</span> <span class="p">:</span> <span class="n">Controller</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">private</span> <span class="n">IDataSession</span> <span class="n">_dataSession</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">SomeController</span><span class="p">(</span><span class="n">IDataSession</span> <span class="n">dataSession</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">_dataSession</span> <span class="p">=</span> <span class="n">dataSession</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">ActionResult</span> <span class="nf">Index</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nf">View</span><span class="p">(</span><span class="n">_dataSession</span><span class="p">.</span><span class="n">Set</span><span class="p">&lt;</span><span class="n">Orders</span><span class="p">&gt;())</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Part 2 - Testing</h2>
+
+<p>We want to be able to write our tests with a minimum of incidental complexity.  In other words, we want to be able to create an in-memory implementation of <code>IDataSession</code>, specifying the tables and entities we need for the test - no more, and no less.  In order to provide a super-simple interface for our tests, we need to hide some complexity within our <code>IDataSession</code> wrapper.</p>
+
+<p>Unfortunately, I was not able to accomplish this succintly without including a mocking library, albeit <a href="http://www.moqthis.com/">a very nicely written one</a>).  Any suggestions for improvement here would be greatly appreciated.  The implementation follows:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="c1">// Only to be included in test assemblies:</span>
+</span><span class='line'><span class="k">public</span> <span class="k">static</span> <span class="k">class</span> <span class="nc">DataHelper</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">static</span> <span class="n">IDataSession</span> <span class="nf">Session</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">new</span> <span class="nf">MockDataSession</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="k">static</span> <span class="n">IDataSession</span> <span class="n">Session</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;(</span><span class="k">params</span> <span class="n">T</span><span class="p">[]</span> <span class="k">set</span><span class="p">)</span> <span class="k">where</span> <span class="n">T</span> <span class="p">:</span> <span class="k">class</span>
+</span><span class='line'>    <span class="err">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nf">Session</span><span class="p">().</span><span class="n">AddSet</span><span class="p">(</span><span class="k">set</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="k">static</span> <span class="n">IDataSession</span> <span class="n">AddSet</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;(</span><span class="k">this</span> <span class="n">IDataSession</span> <span class="n">session</span><span class="p">,</span> <span class="k">params</span> <span class="n">T</span><span class="p">[]</span> <span class="k">set</span><span class="p">)</span> <span class="k">where</span> <span class="n">T</span> <span class="p">:</span> <span class="k">class</span>
+</span><span class='line'>    <span class="err">{</span>
+</span><span class='line'>        <span class="p">(</span><span class="n">session</span> <span class="k">as</span> <span class="n">MockDataSession</span><span class="p">)</span>
+</span><span class='line'>            <span class="p">.</span><span class="n">Mock</span>
+</span><span class='line'>            <span class="p">.</span><span class="n">Setup</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">.</span><span class="n">Set</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;())</span>
+</span><span class='line'>            <span class="p">.</span><span class="n">Returns</span><span class="p">(</span><span class="k">set</span> <span class="p">==</span> <span class="k">null</span> <span class="p">?</span> <span class="k">new</span> <span class="n">FakeDbSet</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;()</span> <span class="p">:</span> <span class="k">new</span> <span class="n">FakeDbSet</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;(</span><span class="k">set</span><span class="p">));</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">return</span> <span class="n">mockSession</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">private</span> <span class="k">class</span> <span class="nc">MockDataSession</span> <span class="p">:</span> <span class="n">IDataSession</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">private</span> <span class="n">Mock</span><span class="p">&lt;</span><span class="n">IDataSession</span><span class="p">&gt;</span> <span class="n">_mock</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Mock</span><span class="p">&lt;</span><span class="n">IDataSession</span><span class="p">&gt;();</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">internal</span> <span class="n">Mock</span><span class="p">&lt;</span><span class="n">IDataSession</span><span class="p">&gt;</span> <span class="n">Mock</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">get</span> <span class="p">{</span> <span class="k">return</span> <span class="n">_mock</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">public</span> <span class="k">void</span> <span class="nf">Dispose</span><span class="p">()</span> <span class="p">{</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">IDbSet</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="n">IDataSession</span><span class="p">.</span><span class="n">Set</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;()</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">return</span> <span class="n">_mock</span><span class="p">.</span><span class="n">Object</span><span class="p">.</span><span class="n">Set</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;();</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// This doesn&#39;t seem to be something that&#39;s really testable,</span>
+</span><span class='line'>        <span class="c1">// so we&#39;ll concede this and throw an exception:</span>
+</span><span class='line'>        <span class="k">public</span> <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="n">SqlQuery</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;(</span><span class="kt">string</span> <span class="n">sql</span><span class="p">,</span> <span class="k">params</span> <span class="kt">object</span><span class="p">[]</span> <span class="n">parameters</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">NotImplementedException</span><span class="p">();</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// There&#39;s nothing to &quot;save&quot;, per se so it&#39;s just a NOOP</span>
+</span><span class='line'>        <span class="k">public</span> <span class="k">void</span> <span class="nf">SaveChanges</span><span class="p">()</span> <span class="p">{</span> <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Part 3 - Putting it All Together</h2>
+
+<p>Now that we have structured our client code so that it depends on interfaces instead of implementations, and we have an in-memory version of <code>IDataStore</code>, we can create tests that are fast to write, fast to execute, and test the necessary behavior of our program.  Here&rsquo;s an example of how we can do this:</p>
+
+<p>Let&rsquo;s suppose we have a business rule that states &ldquo;customers on credit hold cannot place new orders&rdquo; (because they haven&rsquo;t paid their bills).  That rule might give us a controller that looks like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">OrdersController</span> <span class="p">:</span> <span class="n">Controller</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="c1">// In a real application, we probably would not have IDataSession </span>
+</span><span class='line'>    <span class="c1">// as a direct dependency in a controller, but for our purposes </span>
+</span><span class='line'>    <span class="c1">// this is fine.</span>
+</span><span class='line'>    <span class="k">private</span> <span class="n">IDataSession</span> <span class="n">_dataSession</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">OrdersController</span><span class="p">(</span><span class="n">IDataSession</span> <span class="n">dataSession</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">_dataSession</span> <span class="p">=</span> <span class="n">dataSession</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">ActionResult</span> <span class="nf">New</span><span class="p">(</span><span class="n">Guid</span> <span class="n">customerId</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">_dataSession</span><span class="p">.</span><span class="n">Set</span><span class="p">&lt;</span><span class="n">Customer</span><span class="p">&gt;().</span><span class="n">Single</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">.</span><span class="n">Id</span> <span class="p">==</span> <span class="n">customerId</span><span class="p">).</span><span class="n">OnCreditHold</span><span class="p">)</span>
+</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">Exception</span><span class="p">(</span><span class="s">&quot;Customer is on credit hold and cannot place new orders.&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">return</span> <span class="nf">View</span><span class="p">(</span><span class="k">new</span> <span class="n">NewOrderViewModel</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">CustomerId</span> <span class="p">=</span> <span class="n">customerId</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">});</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We can now write a test for this controller like this (the assertion syntax comes from <a href="http://www.fluentassertions.com/">FluentAssertions</a>):</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="na">[TestFixture]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">OrdersControllerTests</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="na">    [Test]</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">void</span> <span class="nf">New_CustomerOnCreditHold</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">customerId</span> <span class="p">=</span> <span class="n">Guid</span><span class="p">.</span><span class="n">NewGuid</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">data</span> <span class="p">=</span> <span class="n">DataHelper</span>
+</span><span class='line'>            <span class="p">.</span><span class="n">Session</span><span class="p">(</span><span class="k">new</span> <span class="n">Customer</span> <span class="p">{</span>
+</span><span class='line'>                <span class="n">Id</span> <span class="p">=</span> <span class="n">customerId</span>
+</span><span class='line'>            <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">new</span> <span class="nf">OrdersController</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</span><span class='line'>            <span class="p">.</span><span class="n">Invoking</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">.</span><span class="n">New</span><span class="p">(</span><span class="n">customerId</span><span class="p">))</span>
+</span><span class='line'>            <span class="p">.</span><span class="n">ShouldThrow</span><span class="p">&lt;</span><span class="n">Exception</span><span class="p">&gt;(</span><span class="s">&quot;*on credit hold*&quot;</span><span class="p">);</span>
+</span><span class='line'>            <span class="c1">//                      ^^^^^^^^^^^^^^^^^^</span>
+</span><span class='line'>            <span class="c1">// FluentAssertions will accept wildcard characters for</span>
+</span><span class='line'>            <span class="c1">// matching exception text.</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And that&rsquo;s it!</p>
+
+<h2>Conclusion</h2>
+
+<p>Entity Framework can be a useful tool in the toolbelt, but it requires a little bit of work on top to keep your code testable.  Doing that work is well worth the gains in the ability to write tests that are fast to write, fast to execute, and let you focus on the business logic of your application.</p>
+
+<p>Happy coding!</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -505,6 +944,10 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/08/08/making-entity-framework-more-testable/">Making Entity Framework More Unit-Testable</a>
+      </li>
+    
+      <li class="post">
         <a href="/2015/06/11/getting-more-inolved-with-oss-via-up-for-grabs/">Getting More Inolved With OSS via Up for Grabs</a>
       </li>
     
@@ -518,10 +961,6 @@
     
       <li class="post">
         <a href="/2013/05/14/its-high-time-to-make-windows-development-cheaper/">It&#8217;s High Time to Make Windows Development Cheaper</a>
-      </li>
-    
-      <li class="post">
-        <a href="/2013/04/24/undersharp-babys-first-nuget-package/">UnderSharp &#8211; Baby&#8217;s First NuGet Package!</a>
       </li>
     
   </ul>
