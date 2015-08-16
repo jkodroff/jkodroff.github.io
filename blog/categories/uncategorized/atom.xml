@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Uncategorized | Josh Kodroff, Code Craftsman]]></title>
   <link href="http://joshkodroff.com/blog/categories/uncategorized/atom.xml" rel="self"/>
   <link href="http://joshkodroff.com/"/>
-  <updated>2015-08-15T21:59:53-04:00</updated>
+  <updated>2015-08-15T22:56:19-04:00</updated>
   <id>http://joshkodroff.com/</id>
   <author>
     <name><![CDATA[Josh Kodroff]]></name>
@@ -18,7 +18,10 @@
     <link href="http://joshkodroff.com/2015/06/11/getting-more-inolved-with-oss-via-up-for-grabs/"/>
     <updated>2015-06-11T00:00:00-04:00</updated>
     <id>http://joshkodroff.com/2015/06/11/getting-more-inolved-with-oss-via-up-for-grabs</id>
-    <content type="html"><![CDATA[<p>I attended the <a href="http://dotnetfringe.org/">DotNetFringe</a> conference in Portland in April, and I met some some fantastic people, learned a ton, and had an overall great time. The conference was focused on open source in the .NET ecosystem, and I&#8217;m definitely an advocate for both of those things.</p>
+    <content type="html"><![CDATA[<p>I attended the <a href="http://dotnetfringe.org/">DotNetFringe</a> conference in Portland in April, and I met some some fantastic people, learned a ton, and had an overall great time. The conference was focused on open source in the .NET ecosystem, and I&#8217;m definitely a fan of both of those things.</p>
+
+<!-- more -->
+
 
 <p>While I&#8217;ve been a consumer of much open source software for a long time, <a href="https://github.com/jkodroff">I&#8217;m not where I&#8217;d like to be in terms of giving back to the community</a> (i.e. there ain&#8217;t a lot of green on my contrib chart at the time of writing this post). I want that to change, so I&#8217;m committing (pun sorta-intentional) to doing 1 pull request per month for projects on <a href="http://up-for-grabs.net/#/">Up For Grabs</a> projects.</p>
 
@@ -124,6 +127,9 @@
     <id>http://joshkodroff.com/2014/02/08/consistency-versus-innovation</id>
     <content type="html"><![CDATA[<p>At one of the places I&#8217;ve been employed in my career (an agency), there was a big emphasis on &#8220;consistency&#8221;. Our employees worked on multiple projects and the theory went that if all of our projects were consistent in their use of coding standards, tools, workflows, etc our productivity would increase and therefore our profits would likewise increase.</p>
 
+<!-- more -->
+
+
 <p>I would consider myself a good developer. When I see potential improvements in how software can be developed, then I want to incorporate that feedback into my process immediately and reap the results. That&#8217;s what agile is all about when you get down to it &#8211; gathering constant feedback, incorporating it into your process, and reaping the benefits of continuous improvement.</p>
 
 <p>Rigid development processes are like recipes &#8211; they&#8217;re for novices so that they can keep themselves out of trouble. Your best developers, the (true) experts, the people who innovate and <a href="http://haacked.com/archive/2007/06/25/understanding-productivity-differences-between-developers.aspx">deliver the maximum value for your organization</a> are hampered by recipes. So why would you want to force a process upon your best developers which hampers their ability to solve problems?</p>
@@ -140,6 +146,9 @@
     <content type="html"><![CDATA[<p>At work, I use a MacBook Pro and boot into Windows directly using BootCamp. I tried using <a href="https://www.virtualbox.org/">VirtualBox</a> but key bindings not matching up drove me nuts and I was trying to get a project launched on a tight deadline, so I went with what I knew.</p>
 
 <p>As a reward for launching said project, I got myself a nice new MacBook Pro for home use with a Retina screen, and 16 GB RAM. Professional tools for a professional developer and whatnot.</p>
+
+<!-- more -->
+
 
 <p>So I&#8217;m doing a little extra studying on <a href="http://tekpub.com/">TekPub</a> in my off-hours, watching <a href="http://tekpub.com/productions/nsb/1">Udi Dahan&#8217;s intro to NServiceBus</a>. I&#8217;ve never taken Udi&#8217;s course so I wanted to make sure I hadn&#8217;t missed anything that could make my work significantly easier.</p>
 
