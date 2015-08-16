@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Domain-driven Design | Josh Kodroff, Code Craftsman]]></title>
   <link href="http://joshkodroff.com/blog/categories/domain-driven-design/atom.xml" rel="self"/>
   <link href="http://joshkodroff.com/"/>
-  <updated>2015-08-15T19:49:18-04:00</updated>
+  <updated>2015-08-15T21:59:53-04:00</updated>
   <id>http://joshkodroff.com/</id>
   <author>
     <name><![CDATA[Josh Kodroff]]></name>
@@ -24,6 +24,9 @@
 <li>All solutions to problems are framed in terms of the value delivered to the stakeholders for the effort required.</p></li>
 <li>The core of the code is a model of the business process, and it <a href="https://en.wikipedia.org/wiki/Code_refactoring">evolves with time</a> as the  developers&#8217; understanding of the business with time.</li>
 </ol>
+
+
+<!-- more -->
 
 
 <p>There&#8217;s other principles involved, but these two are the most relevant fo this particular post.</p>
