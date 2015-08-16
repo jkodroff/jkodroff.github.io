@@ -11,6 +11,8 @@ In my view, there&#8217;s 2 main principles that distinguish Domain-driven desig
   1. All solutions to problems are framed in terms of the value delivered to the stakeholders for the effort required.</p> 
   2. The core of the code is a model of the business process, and it [evolves with time][1] as the  developers&#8217; understanding of the business with time.
 
+<!-- more -->
+
 There&#8217;s other principles involved, but these two are the most relevant fo this particular post.
 
 Sounds pretty generic, right?  So how do we implement this?  You may find, as I did, that direct advice (i.e. rules of thumb) on how to write domain-driven code is tough to find.  DDD is a very powerful technique for software development, but even though it&#8217;s has been popular for about 10 years now best practices are not yet widely understood.  There&#8217;s a long line of developers burned by DDD because they didn&#8217;t have a proper understanding of where domain models are appropriate.  They end up writing more code than they need to, and DDD gets a bad rap.  That&#8217;s a bummer because when it&#8217;s applied with wisdom, DDD really can make one&#8217;s life as a coder easier.

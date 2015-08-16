@@ -8,6 +8,8 @@ categories:
 ---
 I find myself in the incredibly fortunate position of having a skill set that is greatly in demand. I get calls and emails on a near-daily basis from recruiters for all types of jobs. (If you don&#8217;t think that having recruiters contact you on a daily basis is a good problem to have, I would advise you to consider the employment circumstances of anyone else who is not a medical or IT professional, i.e. the other 99.999% of the world.) While there&#8217;s a lot to like about my current position, it would be foolish to be closed to new opportunities if the right one comes up. But how do I now what &#8220;the right opportunity&#8221; looks like? My answer: The Josh Test.
 
+<!-- more -->
+
 In August of 2000, software blogging Godfather [Joel Spolsky][1] posted [a simple and quick 12-point checklist][2] to see if an organization is doing good development work. The points have become a little outdated with time, but it still remains a good yardstick to measure a software organization. I wanted to iterate on this concept so that I could devise a test for potential opportunities that I might come across.
 
 What I came up with was a list of what I consider the key dimensions software job. Each dimension can be scored on a scale of 1 to X. X is higher for more important things, lower for less important things. Figuring out whether a position you&#8217;re considering is a significant upgrade is simple: run the test for your current position, run the test for the potential position and compare the totals.

@@ -10,6 +10,8 @@ At work, I use a MacBook Pro and boot into Windows directly using BootCamp. I tr
 
 As a reward for launching said project, I got myself a nice new MacBook Pro for home use with a Retina screen, and 16 GB RAM. Professional tools for a professional developer and whatnot.
 
+<!-- more -->
+
 So I&#8217;m doing a little extra studying on [TekPub][2] in my off-hours, watching [Udi Dahan&#8217;s intro to NServiceBus][3]. I&#8217;ve never taken Udi&#8217;s course so I wanted to make sure I hadn&#8217;t missed anything that could make my work significantly easier.
 
 Long story short, I found some code that I wanted to try out here at home so I start looking into what it would take for me to have my own legal copies of my work development environment. What I found did not make me very happy:

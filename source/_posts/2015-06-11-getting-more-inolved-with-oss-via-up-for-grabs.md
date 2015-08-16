@@ -6,7 +6,9 @@ permalink: /2015/06/11/getting-more-inolved-with-oss-via-up-for-grabs/
 categories:
   - Uncategorized
 ---
-I attended the [DotNetFringe][1] conference in Portland in April, and I met some some fantastic people, learned a ton, and had an overall great time. The conference was focused on open source in the .NET ecosystem, and I&#8217;m definitely an advocate for both of those things.
+I attended the [DotNetFringe][1] conference in Portland in April, and I met some some fantastic people, learned a ton, and had an overall great time. The conference was focused on open source in the .NET ecosystem, and I&#8217;m definitely a fan of both of those things.
+
+<!-- more -->
 
 While I&#8217;ve been a consumer of much open source software for a long time, [I&#8217;m not where I&#8217;d like to be in terms of giving back to the community][2] (i.e. there ain&#8217;t a lot of green on my contrib chart at the time of writing this post). I want that to change, so I&#8217;m committing (pun sorta-intentional) to doing 1 pull request per month for projects on [Up For Grabs][3] projects.
 

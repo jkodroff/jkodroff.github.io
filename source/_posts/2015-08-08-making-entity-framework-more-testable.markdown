@@ -10,6 +10,8 @@ categories: entityframework, testing
 
 For developers using [Entity Framework](https://entityframework.codeplex.com/), unit testing code that depends on the `DbContext` class is not the easiest thing.  If we're interested in doing unit testing, we need to be able to use an in-memory ("fake" in [Martin Fowler's terminology](http://martinfowler.com/articles/mocksArentStubs.html)) version of `DbContext` comprised of lists of objects so that our tests do not hit the database.  This series of posts takes you through my process in getting to a facade on top of Entity Framework that results in testable code and tests that are fast to write.
 
+<!-- more -->
+
 *Note:* The issues described are only known to apply to Entity Framework <= 6.x.  EF 7 is a complete rewrite, so it's possible that these issues have since been addressed.
 
 ## tl;dr
