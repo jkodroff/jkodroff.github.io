@@ -1,9 +1,8 @@
 ---
 layout: page
 title: "about me"
-date: 2015-08-15 22:08
-comments: true
-sharing: true
+comments: false
+sharing: false
 footer: true
 ---
 
