@@ -2,7 +2,7 @@
 #      Main Configs       #
 # ----------------------- #
 
-url: http://jkodroff.github.io
+url: http://joshkodroff.com
 title: "Josh Kodroff, Code Craftsman"
 subtitle: Writings on software development
 author: Josh Kodroff
@@ -91,7 +91,7 @@ delicious_user:
 delicious_count: 3
 
 # Disqus Comments
-disqus_short_name:
+disqus_short_name: joshkodroff
 disqus_show_comment_count: false
 
 # Google Analytics
