@@ -1,0 +1,755 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>An Elegant Abandoned Cart Email Using NServiceBus - Josh Kodroff, Code Craftsman</title>
+  <meta name="author" content="Josh Kodroff">
+
+  
+  <meta name="description" content="Abstract Some of the toughest requirements to model in enterprise development are business rules that involve the dimension of time. In this post I& &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://joshkodroff.com/blog/2015/08/21/an-elegant-abandoned-cart-email-using-nservicebus">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Josh Kodroff, Code Craftsman" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href='https://fonts.googleapis.com/css?family=Noto+Serif:400,700' rel='stylesheet' type='text/css'>
+<link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Josh Kodroff, Code Craftsman</a></h1>
+  
+    <h2>Writings on software development</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  
+  
+</ul>
+
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/about-me">About Me</a></li>
+  <li><a href="/contact">Contact</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">An Elegant Abandoned Cart Email Using NServiceBus</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2015-08-21T20:30:59-04:00" pubdate data-updated="true">Aug 21st, 2015</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><h2>Abstract</h2>
+
+<p>Some of the toughest requirements to model in enterprise development are business rules that involve the dimension of time.  In this post I&rsquo;ll show you how to fulfill those types of requirements in an elegant, testable, and scalable way using a message-driven style with <a href="http://particular.net/nservicebus">NServiceBus</a>.</p>
+
+<h2>tl;dr</h2>
+
+<p>If you&rsquo;re familiar NServiceBus and specifically its <a href="docs.particular.net/nservicebus/sagas/">sagas feature</a>, you can check out <a href="https://github.com/jkodroff/nsb-abandoned-cart">the code on GitHub</a>.  Of particular interest would be <a href="https://github.com/jkodroff/nsb-abandoned-cart/blob/master/src/Server/Saga.cs">the saga</a> and <a href="https://github.com/jkodroff/nsb-abandoned-cart/blob/master/src/Server.Tests/SagaTests.cs">its tests</a>.  There&rsquo;s also a <a href="https://github.com/jkodroff/nsb-abandoned-cart/blob/master/src/Client/Program.cs">console app client</a> that will let you play around.</p>
+
+<!-- more -->
+
+
+<h2>A Common Requirement and a Common Implementation</h2>
+
+<p>A common requirement in eCommerce systems might go like this:</p>
+
+<blockquote><p>If a customer adds an item to their cart and does not complete the checkout process within <code>$SOME_AMOUNT_OF_TIME</code>, send them an email reminding them that they have items in their cart.</p></blockquote>
+
+<p>Many systems will solve this problem using a batch job.  It&rsquo;ll go something like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="kt">var</span> <span class="n">abandonedCartThreshold</span> <span class="p">=</span> <span class="n">TimeSpan</span><span class="p">.</span><span class="n">FromDays</span><span class="p">(</span><span class="m">1</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">foreach</span> <span class="p">(</span><span class="n">cart</span> <span class="k">in</span> <span class="n">allCarts</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// a cart disappears when it becomes an order</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">cart</span><span class="p">.</span><span class="n">Items</span><span class="p">.</span><span class="n">Any</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">UtcNow</span> <span class="p">-</span> <span class="n">x</span><span class="p">.</span><span class="n">CreatedOn</span> <span class="p">&lt;=</span> <span class="n">abandonedCartThreshold</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="c1">// fetch customer to whom the cart belongs</span>
+</span><span class='line'>        <span class="c1">// send email</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This might be fine for a simple system with low numbers of customers, but for most real-world systems there&rsquo;s several drawbacks with this approach that we need to consider:</p>
+
+<ol>
+<li><strong>It&rsquo;s slow, especially if you&rsquo;re sending the email synchronously:</strong> Network operations like sending email are the slowest types of operations.  And if our business is doing well, has tons of customers, and the nightly job&rsquo;s time exceeds 24 hours, we&rsquo;re in big trouble because it will never complete.  A single process cannot handle the load, so we&rsquo;re going to have to get into multiple processes with batching.  That&rsquo;s going to get ugly.</li>
+<li><strong>We have to keep track of what&rsquo;s already been sent:</strong> Customers <em>really</em> don&rsquo;t like getting duplicate emails. If we have an error in the middle of the loop, we will have to keep track of which emails have already been sent in order to avoid annoyed customers.</li>
+<li><strong>It doesn&rsquo;t deal with network partitions:</strong> We have to handle retrying the job in the event that something is seriously wrong, e.g. the mail server is unavailable.  In many systems this will involve an administrator or developer manually running the process again.  That&rsquo;s not the phone call you want to receive that wakes you up.</li>
+<li><strong>It&rsquo;s not as precise as it could be:</strong> We&rsquo;re sending the email every night.  While an abandoned cart email probably isn&rsquo;t critical to be sent <em>exactly</em> <code>$SOME_AMOUNT_OF_TIME</code> after the last item is added to the cart, there are other communications that may be, e.g. if payment could not be captured on a large order, so learning to be precise here has applications in other areas.</li>
+<li><strong>The code doesn&rsquo;t adapt well for new requirements:</strong> If we want to, e.g send several follow-up emails after 7 and 30 days, we&rsquo;re going to need to add yet some more fields to the DB for every customer and keep track of that state as well.</li>
+<li><strong>It doesn&rsquo;t deal well with problems like invalid data:</strong> If we make a mistake in our error handling or our logic (e.g. if we run into an unexpected bug with 1 specific customer without a valid email address, <em>who was undoubtedly imported directly into the database, skipping our painstakingly crafted validation in our application code</em> (because that&rsquo;s what happens out there in the real world), our process will die.  Ok, so we can add try/catch block.  And we need to add tests for that.  And if you are inclinded towards software craftsmanship, it should strike you as wrong that we&rsquo;re going to retry the same broken customer every time we run the job, so now we need to add even more state via a flag to make sure we don&rsquo;t send the email to a customer who has failed <code>$SOME_NUMBER_OF_TIMES</code>.  That&rsquo;s a lot of additional logic we need to account for.</li>
+<li><strong>It&rsquo;s difficult to test:</strong>  How can we tell how this thing going to perform in production?  How can we be confident that it works correctly?  The state that the job encompasses includes all carts in the system, so it&rsquo;s difficult to say short of creating 10,000 carts and customers, then sending 10,000 emails.  That can run into issues like getting your employer blacklisted for bad email behavior.   Of course, we can use things like <a href="https://en.wikipedia.org/wiki/Dependency_injection">dependency injection</a> for testing, but because we&rsquo;re not sending a real email, we won&rsquo;t get anything like production performance.</li>
+</ol>
+
+
+<p>Those are pretty significant issues, so what are we going to do?</p>
+
+<h2>Enter The Saga</h2>
+
+<p>Luckily, there&rsquo;s a better way to do this: The saga pattern is the right tool for this job. It&rsquo;s tricky to describe a saga conscisely, so here&rsquo;s a list of things <em>about sagas</em> that might help you conceptualize them:</p>
+
+<ol>
+<li><strong>They&rsquo;re state machines:</strong> You can think of them like a flow chart that represents a slow-running business process.  Where &ldquo;slow-running&rdquo; is defined as &ldquo;at least computer time slow, and maybe even human-time slow&rdquo;, e.g. an ordering process that requires multiple calls to HTTP-based APIs or&hellip; an abandoned cart email that needs to be sent 1 day after the last item is added to the cart (fancy that!).</li>
+<li><strong>They&rsquo;re coordinators:</strong> They wait for things to happen (e.g. for the warehouse to tell us that an order has shipped), and then they tell the system to do things (e.g. charge the customers card, send the customer a email telling them their order has shipped).</li>
+<li><strong>They&rsquo;re persistent entities:</strong> Because the processes they model are slow-running, they have to persist the state of the process after each step is done.  We can&rsquo;t expect to keep this process running in memory for 3 days while a placed order is packaged at a warehouse.  Because they&rsquo;re loaded by a unique identifier they are <a href="http://martinfowler.com/bliki/EvansClassification.html">entities</a> domain-driven design terms.  (They&rsquo;re also <a href="http://stackoverflow.com/questions/1958621/whats-an-aggregate-root">aggregate roots</a>, although I think this distinction can be confusing so feel free to ignore it.)</li>
+</ol>
+
+
+<p>We also get the following benefits with NServiceBus' implementation of sagas:</p>
+
+<ol>
+<li><strong>Retrying failed messages:</strong> Sagas in NServiceBus are also message handlers and NServiceBus message handlers <a href="http://docs.particular.net/nservicebus/errors/automatic-retries">automatically retry failed messages</a>.  This feature is very very useful when dealing with, e.g <a href="https://twitter.com/search?q=mailgun%20%5Bstatus%5D&amp;src=typd">a temporary outage on our mail service</a>.</li>
+<li><strong>Persisting state between messages:</strong> The NServiceBus <code>Saga</code> class (from which we inherit) is already designed to handle persisting the state after each message in the saga is handled.  More code we don&rsquo;t have to write.</li>
+<li><strong>The dimension of time can easily be modeled and tested:</strong> NServiceBus sagas allow us to express a process over time through its <a href="http://docs.particular.net/nservicebus/sagas/timeouts">timeouts feature</a>.  This feature is going to be key to implementing our requirement as you&rsquo;ll see very soon.</li>
+<li><strong>Our saga will run asynchronously:</strong> NServiceBus message handlers (which include sagas) run asynchronously, which will allow us to <a href="http://docs.particular.net/samples/scaleout/">scale out</a> by running multiple copies of our saga endpoint if we need to.</li>
+</ol>
+
+
+<h2>Creating our NServiceBus Saga: First Steps</h2>
+
+<p><strong>Note:</strong> This section assumes you have a basic understanding of NServiceBus' message types.  If you don&rsquo;t you should <a href="http://docs.particular.net/nservicebus/messaging/messages-events-commands">read this</a>.</p>
+
+<p>The first thing we need to do is to create some messages which will be sent by our client application via NServiceBus' <code>Bus.Send()</code> method.  This is probably an ASP.NET MVC application, but they could just as easily be sent from a console application, or anywhere really.  If we&rsquo;re following the typical messaging semantics these should be events, but because there&rsquo;s a high likelihood they are sent from a website, we should not use <code>Bus.Publish()</code> (<a href="http://www.make-awesome.com/2010/10/why-not-publish-nservicebus-messages-from-a-web-application/">detailed explanation here</a>).</p>
+
+<p>Here&rsquo;s our messages:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="c1">// When we get one of these, we will reset the countdown to sending the email:</span>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">ItemAddedToCart</span> <span class="p">:</span> <span class="n">IMessage</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">string</span> <span class="n">UserName</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// When we get one of these, we will cancel the entire </span>
+</span><span class='line'><span class="c1">// process because the the cart is no longer abandoned:</span>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">OrderSubmitted</span> <span class="p">:</span> <span class="n">IMessage</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">string</span> <span class="n">UserName</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now we&rsquo;re ready to create our saga.  When we create a saga in NServiceBus, we need to define 2 things:</p>
+
+<ol>
+<li>The class which will hold the saga&rsquo;s state in between messages.  This is where we&rsquo;ll keep track of which messages were received and any state that we need to keep track of between messages.</li>
+<li>The message that begins the saga.</li>
+</ol>
+
+
+<p>Let&rsquo;s do that now:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">AbandonedCartSagaData</span> <span class="p">:</span> <span class="n">IContainSagaData</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="c1">// Built-in saga properties:</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">Guid</span> <span class="n">Id</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">string</span> <span class="n">Originator</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">string</span> <span class="n">OriginalMessageId</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">AbandonedCartSaga</span> <span class="p">:</span>
+</span><span class='line'>  <span class="n">Saga</span><span class="p">&lt;</span><span class="n">AbandonedCartSagaData</span><span class="p">&gt;,</span>
+</span><span class='line'>  <span class="n">IAmStartedByMessages</span><span class="p">&lt;</span><span class="n">ItemAddedToCart</span><span class="p">&gt;</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">void</span> <span class="nf">Handle</span><span class="p">(</span><span class="n">ItemAddedToCart</span> <span class="n">message</span><span class="p">)</span> <span class="p">{</span> <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We need to tell NServiceBus how to get from an incoming message to the right saga (one saga per customer, keyed off the username).</p>
+
+<p>Add this to <code>AbandonedCartSagaData</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="c1">// This needs to be unique so that we can scale out, or </span>
+</span><span class='line'><span class="c1">// we might get 2 Sagas with the same username, </span>
+</span><span class='line'><span class="c1">// per https://twitter.com/UdiDahan/status/587896128688951297</span>
+</span><span class='line'><span class="na">[Unique]</span>
+</span><span class='line'><span class="k">public</span> <span class="kt">string</span> <span class="n">UserName</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And add this to <code>AbandonedCartSaga</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="k">protected</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">ConfigureHowToFindSaga</span><span class="p">(</span><span class="n">SagaPropertyMapper</span><span class="p">&lt;</span><span class="n">AbandonedCartSagaData</span><span class="p">&gt;</span> <span class="n">mapper</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">mapper</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">ConfigureMapping</span><span class="p">&lt;</span><span class="n">ItemAddedToCart</span><span class="p">&gt;(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">.</span><span class="n">UserName</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">ToSaga</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">.</span><span class="n">UserName</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">mapper</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">ConfigureMapping</span><span class="p">&lt;</span><span class="n">OrderSubmitted</span><span class="p">&gt;(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">.</span><span class="n">UserName</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">ToSaga</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">.</span><span class="n">UserName</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Creating our NServiceBus Saga: Business Logic</h2>
+
+<p>First we need to understand <a href="http://docs.particular.net/nservicebus/sagas/timeouts">timeouts in NServiceBus sagas</a>.  A timeout message is like a programmable boomerang: the saga sends the timeout message (which can contain whatever additional data you want), and it&rsquo;ll &ldquo;come back&rdquo; to the saga in whatever <code>TimeSpan</code> you specify when you call <code>RequestTimeout()</code> from within the saga.</p>
+
+<p>We&rsquo;re going to model our business process in our saga like this:</p>
+
+<ol>
+<li>Every time we receive <code>ItemAddedToCart</code>, we&rsquo;ll send a timeout message <code>AbandonedCartTimeOut</code> with a newly generated unique identifier.  We&rsquo;ll also store this ID in the saga&rsquo;s data.</li>
+<li>When we receive <code>AbandonedCartTimeOut</code>, if the ID of the incoming message does not match ID of the last sent message in the saga, we&rsquo;ll know that an item has been added to the cart since the timeout message was issued.  If the IDs match, we&rsquo;ll send the email and complete the saga.</li>
+<li>If we receive an <code>OrderSubmitted</code> message, we don&rsquo;t need to send the email because the customer has completed the checkout process and we&rsquo;ll complete the saga.</li>
+</ol>
+
+
+<p>Let&rsquo;s do that now.  First, we&rsquo;ll need to create our timeout message.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">AbandonedCartTimeOut</span> <span class="p">:</span> <span class="n">IMessage</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">public</span> <span class="n">Guid</span> <span class="n">Id</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Add this to <code>AbandonedCartEmailSagaData</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="k">public</span> <span class="n">Guid</span> <span class="n">LastTimeOutId</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Add this to <code>AbandonedCartEmailSaga</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">Handle</span><span class="p">(</span><span class="n">ItemAddedToCart</span> <span class="n">message</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">Data</span><span class="p">.</span><span class="n">UserName</span> <span class="p">=</span> <span class="n">message</span><span class="p">.</span><span class="n">UserName</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">Data</span><span class="p">.</span><span class="n">LastTimeOutId</span> <span class="p">=</span> <span class="n">Guid</span><span class="p">.</span><span class="n">NewGuid</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">RequestTimeout</span><span class="p">(</span>
+</span><span class='line'>        <span class="c1">// We&#39;re using 5 seconds because it makes it easy to test,</span>
+</span><span class='line'>        <span class="c1">// but in a real system, we might want to provide this via</span>
+</span><span class='line'>        <span class="c1">// a configurable variable.</span>
+</span><span class='line'>        <span class="n">TimeSpan</span><span class="p">.</span><span class="n">FromSeconds</span><span class="p">(</span><span class="m">5</span><span class="p">),</span>
+</span><span class='line'>        <span class="k">new</span> <span class="n">AbandonedCartTimeout</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">Id</span> <span class="p">=</span> <span class="n">Data</span><span class="p">.</span><span class="n">LastTimeOutId</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">Handle</span><span class="p">(</span><span class="n">OrderSubmitted</span> <span class="n">message</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">MarkAsComplete</span><span class="p">();</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">Timeout</span><span class="p">(</span><span class="n">AbandonedCartTimeout</span> <span class="n">state</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">Data</span><span class="p">.</span><span class="n">LastTimeOutId</span> <span class="p">!=</span> <span class="n">state</span><span class="p">.</span><span class="n">Id</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="c1">// This is not the last timeout issued, so ignore it.</span>
+</span><span class='line'>        <span class="k">return</span><span class="p">;</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">Bus</span><span class="p">.</span><span class="n">SendLocal</span><span class="p">(</span><span class="k">new</span> <span class="n">SendAbandonedCartEmail</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">UserName</span> <span class="p">=</span> <span class="n">Data</span><span class="p">.</span><span class="n">UserName</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">MarkAsComplete</span><span class="p">();</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>How to Test Our NServiceBus Saga</h2>
+
+<p>There&rsquo;s 2 philosophies when it comes to testing NServiceBus sagas:</p>
+
+<ol>
+<li><strong>Unit Testing:</strong> We test each message handler in the saga in isolation, setting up the saga&rsquo;s internal state (i.e. <code>AbandonedCartSagaData</code> in our case) for each message, possibly with several tests for each message handler (if the handler can exhibit several different behaviors).</li>
+<li><strong>End-to-End Testing:</strong> We test the entire flow of a saga from start to completion.</li>
+</ol>
+
+
+<p>I think the latter approach provides some significant advantages:</p>
+
+<ol>
+<li><strong>It more closely resembles real-world usage:</strong> Our saga exists in the wild as a thing that handles a distinct series of messages, with its state managed internally, so it&rsquo;s better to test it that way.</li>
+<li><strong>It requires less code:</strong> NServiceBus' testing facilities provide a convenient way to do this type of testing via <a href="https://en.wikipedia.org/wiki/Method_chaining">method chaining</a>.</li>
+</ol>
+
+
+<h2>Actually Testing Our NServiceBus Saga</h2>
+
+<p>We have 2 distinct scenarios.  First, let&rsquo;s do the &ldquo;happy path&rdquo; (from the view of an eCommerce retailer) where the order gets placed.  (The assertion methods pictured below are done with <a href="http://www.fluentassertions.com/">FluentAssertions</a>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="na">[Test]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">OrderSubmitted</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">userName</span> <span class="p">=</span> <span class="s">&quot;sales@joshkodroff.com&quot;</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">timeoutId1</span> <span class="p">=</span> <span class="n">Guid</span><span class="p">.</span><span class="n">Empty</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">Test</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">Saga</span><span class="p">&lt;</span><span class="n">AbandonedCartSaga</span><span class="p">&gt;()</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">ExpectTimeoutToBeSetIn</span><span class="p">&lt;</span><span class="n">AbandonedCartTimeout</span><span class="p">&gt;((</span><span class="n">msg</span><span class="p">,</span> <span class="n">span</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">timeoutId1</span> <span class="p">=</span> <span class="n">msg</span><span class="p">.</span><span class="n">Id</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">span</span><span class="p">.</span><span class="n">Should</span><span class="p">().</span><span class="n">Be</span><span class="p">(</span><span class="n">TimeSpan</span><span class="p">.</span><span class="n">FromSeconds</span><span class="p">(</span><span class="m">5</span><span class="p">));</span>
+</span><span class='line'>        <span class="p">})</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">When</span><span class="p">(</span><span class="n">saga</span> <span class="p">=&gt;</span> <span class="n">saga</span><span class="p">.</span><span class="n">Handle</span><span class="p">(</span><span class="k">new</span> <span class="n">ItemAddedToCart</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">UserName</span> <span class="p">=</span> <span class="n">userName</span>
+</span><span class='line'>        <span class="p">}))</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">ExpectTimeoutToBeSetIn</span><span class="p">&lt;</span><span class="n">AbandonedCartTimeout</span><span class="p">&gt;((</span><span class="n">msg</span><span class="p">,</span> <span class="n">span</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
+</span><span class='line'>            <span class="c1">// just to make sure we&#39;re generating new ids</span>
+</span><span class='line'>            <span class="n">msg</span><span class="p">.</span><span class="n">Id</span><span class="p">.</span><span class="n">Should</span><span class="p">().</span><span class="n">NotBe</span><span class="p">(</span><span class="n">timeoutId1</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="n">span</span><span class="p">.</span><span class="n">Should</span><span class="p">().</span><span class="n">Be</span><span class="p">(</span><span class="n">TimeSpan</span><span class="p">.</span><span class="n">FromSeconds</span><span class="p">(</span><span class="m">5</span><span class="p">));</span>
+</span><span class='line'>        <span class="p">})</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">When</span><span class="p">(</span><span class="n">saga</span> <span class="p">=&gt;</span> <span class="n">saga</span><span class="p">.</span><span class="n">Handle</span><span class="p">(</span><span class="k">new</span> <span class="n">ItemAddedToCart</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">UserName</span> <span class="p">=</span> <span class="n">userName</span>
+</span><span class='line'>        <span class="p">}))</span>
+</span><span class='line'>        <span class="c1">// just a dummy check.  no message should be sent</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">ExpectNotSend</span><span class="p">&lt;</span><span class="n">SendAbandonedCartEmail</span><span class="p">&gt;(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">When</span><span class="p">(</span><span class="n">saga</span> <span class="p">=&gt;</span> <span class="p">{</span>
+</span><span class='line'>            <span class="c1">// the first timeout comes back (which should be ignored):</span>
+</span><span class='line'>            <span class="n">saga</span><span class="p">.</span><span class="n">Timeout</span><span class="p">(</span><span class="k">new</span> <span class="n">AbandonedCartTimeout</span> <span class="p">{</span>
+</span><span class='line'>                <span class="n">Id</span> <span class="p">=</span> <span class="n">timeoutId1</span>
+</span><span class='line'>            <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="n">saga</span><span class="p">.</span><span class="n">Handle</span><span class="p">(</span><span class="k">new</span> <span class="n">OrderSubmitted</span> <span class="p">{</span>
+</span><span class='line'>                <span class="n">UserName</span> <span class="p">=</span> <span class="n">userName</span>
+</span><span class='line'>            <span class="p">});</span>
+</span><span class='line'>        <span class="p">})</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">AssertSagaCompletionIs</span><span class="p">(</span><span class="k">true</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And now we have the &ldquo;less happy&rdquo; path where the followup email needs to be sent:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="na">[Test]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">OrderNotSubmitted</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">userName</span> <span class="p">=</span> <span class="s">&quot;sales@joshkodroff.com&quot;</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">timeoutId1</span> <span class="p">=</span> <span class="n">Guid</span><span class="p">.</span><span class="n">Empty</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">timeoutId2</span> <span class="p">=</span> <span class="n">Guid</span><span class="p">.</span><span class="n">Empty</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">Test</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">Saga</span><span class="p">&lt;</span><span class="n">AbandonedCartSaga</span><span class="p">&gt;()</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">ExpectTimeoutToBeSetIn</span><span class="p">&lt;</span><span class="n">AbandonedCartTimeout</span><span class="p">&gt;((</span><span class="n">msg</span><span class="p">,</span> <span class="n">span</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">timeoutId1</span> <span class="p">=</span> <span class="n">msg</span><span class="p">.</span><span class="n">Id</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">span</span><span class="p">.</span><span class="n">Should</span><span class="p">().</span><span class="n">Be</span><span class="p">(</span><span class="n">TimeSpan</span><span class="p">.</span><span class="n">FromSeconds</span><span class="p">(</span><span class="m">5</span><span class="p">));</span>
+</span><span class='line'>        <span class="p">})</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">When</span><span class="p">(</span><span class="n">saga</span> <span class="p">=&gt;</span> <span class="n">saga</span><span class="p">.</span><span class="n">Handle</span><span class="p">(</span><span class="k">new</span> <span class="n">ItemAddedToCart</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">UserName</span> <span class="p">=</span> <span class="n">userName</span>
+</span><span class='line'>        <span class="p">}))</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">ExpectTimeoutToBeSetIn</span><span class="p">&lt;</span><span class="n">AbandonedCartTimeout</span><span class="p">&gt;((</span><span class="n">msg</span><span class="p">,</span> <span class="n">span</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">timeoutId2</span> <span class="p">=</span> <span class="n">msg</span><span class="p">.</span><span class="n">Id</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">span</span><span class="p">.</span><span class="n">Should</span><span class="p">().</span><span class="n">Be</span><span class="p">(</span><span class="n">TimeSpan</span><span class="p">.</span><span class="n">FromSeconds</span><span class="p">(</span><span class="m">5</span><span class="p">));</span>
+</span><span class='line'>        <span class="p">})</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">When</span><span class="p">(</span><span class="n">saga</span> <span class="p">=&gt;</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">saga</span><span class="p">.</span><span class="n">Handle</span><span class="p">(</span><span class="k">new</span> <span class="n">ItemAddedToCart</span> <span class="p">{</span>
+</span><span class='line'>                <span class="n">UserName</span> <span class="p">=</span> <span class="n">userName</span>
+</span><span class='line'>            <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="c1">// the first timeout comes back (which should be ignored):</span>
+</span><span class='line'>            <span class="n">saga</span><span class="p">.</span><span class="n">Timeout</span><span class="p">(</span><span class="k">new</span> <span class="n">AbandonedCartTimeout</span> <span class="p">{</span>
+</span><span class='line'>                <span class="n">Id</span> <span class="p">=</span> <span class="n">timeoutId1</span>
+</span><span class='line'>            <span class="p">});</span>
+</span><span class='line'>        <span class="p">})</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">ExpectSendLocal</span><span class="p">&lt;</span><span class="n">SendAbandonedCartEmail</span><span class="p">&gt;(</span><span class="n">msg</span> <span class="p">=&gt;</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">msg</span><span class="p">.</span><span class="n">UserName</span><span class="p">.</span><span class="n">Should</span><span class="p">().</span><span class="n">Be</span><span class="p">(</span><span class="n">userName</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">})</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">When</span><span class="p">(</span><span class="n">saga</span> <span class="p">=&gt;</span> <span class="n">saga</span><span class="p">.</span><span class="n">Timeout</span><span class="p">(</span><span class="k">new</span> <span class="n">AbandonedCartTimeout</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">Id</span> <span class="p">=</span> <span class="n">timeoutId2</span>
+</span><span class='line'>        <span class="p">}))</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">AssertSagaCompletionIs</span><span class="p">(</span><span class="k">true</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Possible Future Enhancements and Conclusion</h2>
+
+<p>What if we need to account for a new <code>ItemRemovedFromCart</code> message?  We&rsquo;d need to include the total number of items in the cart with the <code>ItemRemovedFromCart</code> message, and after that it&rsquo;s pretty simple: If <code>ItemRemovedFromCart.NumberOfCartItems</code> is zero, complete the saga because there&rsquo;s no items left in the cart.  If it&rsquo;s non-zero, then the handler has the same logic as <code>ItemAddedToCart</code>.  For testing, we&rsquo;ll need to add in a few of these messages to our happy path, then add in an additional test fixture or two that aseserts that the saga completes when there&rsquo;s no items left in the cart.)</p>
+
+<p>What if we want to send additional follow-up emails after 7 and 30 days?  Well that would be pretty simple to add:  Just add timeouts for 7 and 30 days and change when the saga completes (after the 3rd email is sent instead of a single email).  It should also be pretty easy to test: extend our happy path test with a couple more assertions for the additional emails, and add 2 more less-happy tests for the order being placed before those timeouts happen.</p>
+
+<p>We can see from the above examples that the saga is very well-suited to adapt to future changes in requirements.  I&rsquo;ve found NServiceBus sagas to be a fantastically-designed tool to handle some of the most difficult requirements I&rsquo;ve come across.  They take a minute to grok beacause they&rsquo;re so powerful, but once you have a good handle on their capabilities and get comfortable with how to fit them into your projects you can really, really get things done.</p>
+
+<p>Happy coding!</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Josh Kodroff</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2015-08-21T20:30:59-04:00" pubdate data-updated="true">Aug 21st, 2015</time>
+      
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://joshkodroff.com/blog/2015/08/21/an-elegant-abandoned-cart-email-using-nservicebus/" data-via="joshkodroff" data-counturl="http://joshkodroff.com/blog/2015/08/21/an-elegant-abandoned-cart-email-using-nservicebus/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/08/08/making-entity-framework-more-testable/" title="Previous Post: Making Entity Framework More Unit-Testable">&laquo; Making Entity Framework More Unit-Testable</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+  <aside class="sidebar">
+   
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:joshkodroff.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/08/21/an-elegant-abandoned-cart-email-using-nservicebus/">An Elegant Abandoned Cart Email Using NServiceBus</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/08/08/making-entity-framework-more-testable/">Making Entity Framework More Unit-Testable</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2015/06/11/getting-more-inolved-with-oss-via-up-for-grabs/">Getting More Inolved With OSS via Up for Grabs</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2014/02/08/the-josh-test-a-sorta-objective-way-to-analyze-new-opportunities/">The Josh Test &#8211; a Sorta-Objective Way to Analyze New Opportunities</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/05/14/its-high-time-to-make-windows-development-cheaper/">It&#8217;s High Time to Make Windows Development Cheaper</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 - Josh Kodroff -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'joshkodroff';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://joshkodroff.com/blog/2015/08/21/an-elegant-abandoned-cart-email-using-nservicebus/';
+        var disqus_url = 'http://joshkodroff.com/blog/2015/08/21/an-elegant-abandoned-cart-email-using-nservicebus/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+<script>
+  $(document).ready(function() {  
+    var stickyNavTop = $('nav').offset().top;  
+      
+    var stickyNav = function(){  
+      var scrollTop = $(window).scrollTop(); 
+      var navHasClassSticky = $('nav').hasClass('sticky');
+
+      if (scrollTop > stickyNavTop && navHasClassSticky) {   
+        return true;
+      } else if (scrollTop > stickyNavTop) {
+        $('nav').hide();
+        $('nav').addClass('sticky');
+        $('nav').fadeIn('2000');
+      } else {  
+        $('nav').removeClass('sticky');   
+      }  
+    };  
+      
+    stickyNav();  
+      
+    $(window).scroll(function() {  
+      stickyNav();  
+    });  
+  });  
+</script>
+
+
+</body>
+</html>
