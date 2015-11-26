@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Entityframework, | Josh Kodroff, Code Craftsman]]></title>
   <link href="http://joshkodroff.com/blog/categories/entityframework/atom.xml" rel="self"/>
   <link href="http://joshkodroff.com/"/>
-  <updated>2015-08-29T09:09:41-04:00</updated>
+  <updated>2015-11-26T15:16:56-05:00</updated>
   <id>http://joshkodroff.com/</id>
   <author>
     <name><![CDATA[Josh Kodroff]]></name>
@@ -25,7 +25,7 @@
 <!-- more -->
 
 
-<p><em>Note:</em> The issues described are only known to apply to Entity Framework &lt;= 6.x.  EF 7 is a complete rewrite, so it&rsquo;s possible that these issues have since been addressed.</p>
+<p><em>Note:</em> The issues described are only known to apply to Entity Framework &lt;= 6.x.  EF 7 is a complete rewrite, and things are very different.  See <a href="#entity-framework-7">here</a> for more details.</p>
 
 <h2>tl;dr</h2>
 
@@ -253,7 +253,12 @@ public class OrdersControllerTests
 
 <p>Entity Framework can be a useful tool in the toolbelt, but it requires a little bit of work on top to keep your code testable.  Doing that work is well worth the gains in the ability to write tests that are fast to write, fast to execute, and let you focus on the business logic of your application.</p>
 
-<p>Happy coding!</p>
+<p><a name="entity-framework-7"></a>
+Happy coding!</p>
+
+<h2>UPDATE 2015-11-26: A Note on Entity Framework 7</h2>
+
+<p>I tried updating the code to use Entity Framework 7 and found that things are quite different, as one would expect with a complete rewrite.  This isn&rsquo;t the most informed advice as I&rsquo;ve only worked with EF 7 for a few hours, but it looks like the problems this code solves are now covered by the <a href="https://www.nuget.org/packages/EntityFramework.InMemory">EntityFramework.InMemory</a> package.</p>
 ]]></content>
   </entry>
   
