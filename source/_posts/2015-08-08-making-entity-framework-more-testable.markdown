@@ -12,7 +12,7 @@ For developers using [Entity Framework](https://entityframework.codeplex.com/), 
 
 <!-- more -->
 
-*Note:* The issues described are only known to apply to Entity Framework <= 6.x.  EF 7 is a complete rewrite, so it's possible that these issues have since been addressed.
+*Note:* The issues described are only known to apply to Entity Framework <= 6.x.  EF 7 is a complete rewrite, and things are very different.  See [here](#entity-framework-7) for more details.
 
 ## tl;dr
 
@@ -247,4 +247,9 @@ And that's it!
 
 Entity Framework can be a useful tool in the toolbelt, but it requires a little bit of work on top to keep your code testable.  Doing that work is well worth the gains in the ability to write tests that are fast to write, fast to execute, and let you focus on the business logic of your application.
 
+<a name="entity-framework-7"></a>
 Happy coding!
+
+## UPDATE 2015-11-26: A Note on Entity Framework 7
+
+I tried updating the code to use Entity Framework 7 and found that things are quite different, as one would expect with a complete rewrite.  This isn't the most informed advice as I've only worked with EF 7 for a few hours, but it looks like the problems this code solves are now covered by the [EntityFramework.InMemory](https://www.nuget.org/packages/EntityFramework.InMemory) package.
