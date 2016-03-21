@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Domain-driven | Josh Kodroff, Code Craftsman]]></title>
+  <link href="http://joshkodroff.com/blog/categories/domain-driven/atom.xml" rel="self"/>
+  <link href="http://joshkodroff.com/"/>
+  <updated>2016-03-20T21:19:43-04:00</updated>
+  <id>http://joshkodroff.com/</id>
+  <author>
+    <name><![CDATA[Josh Kodroff]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Barcamp 2015 Talk Slides: Bronze Bullet Architecture]]></title>
+    <link href="http://joshkodroff.com/blog/2016/03/20/barcamp-2015-talk-slides-bronze-bullet-architecture/"/>
+    <updated>2016-03-20T21:04:32-04:00</updated>
+    <id>http://joshkodroff.com/blog/2016/03/20/barcamp-2015-talk-slides-bronze-bullet-architecture</id>
+    <content type="html"><![CDATA[<p>Way back in November, I gave a talk at BarCamp Philly.  BarCamp Philly is a local unconference and one of my favorite events in the Philly tech community.  If you&rsquo;re in Philly, or a few hours' drive away, you should definitely check it out.  There&rsquo;s all kinds of talks on all types of subjects, from the technical to the decidedly non-technical.</p>
+
+<p>In the talk I gave, I coined the phrase &ldquo;Bronze Bullet Architecture&rdquo; to describe my technical approach to building message-based, domain-driven line of business software, and explained you how my professional experience helped me arrive at this style.  I also used Kanye West album covers to denote the various years in my career.  Anyway, talk slides follow:</p>
+
+<iframe src="//slides.com/joshkodroff/deck/embed" width="576" height="420" scrolling="no" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
+
+]]></content>
+  </entry>
+  
+</feed>

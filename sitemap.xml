@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>http://joshkodroff.com/blog/2016/03/20/barcamp-2015-talk-slides-bronze-bullet-architecture/</loc>
+    <lastmod>2016-03-20T21:04:32-04:00</lastmod>
+  </url>
+  <url>
     <loc>http://joshkodroff.com/blog/2015/08/21/an-elegant-abandoned-cart-email-using-nservicebus/</loc>
     <lastmod>2015-08-21T20:30:59-04:00</lastmod>
   </url>
@@ -47,5 +51,14 @@
   </url>
   <url>
     <loc>http://joshkodroff.com/blog/categories/testing/</loc>
+  </url>
+  <url>
+    <loc>http://joshkodroff.com/blog/categories/architecture/</loc>
+  </url>
+  <url>
+    <loc>http://joshkodroff.com/blog/categories/domain-driven/</loc>
+  </url>
+  <url>
+    <loc>http://joshkodroff.com/blog/categories/design/</loc>
   </url>
 </urlset>
