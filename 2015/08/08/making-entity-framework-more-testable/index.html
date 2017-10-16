@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Making Entity Framework More Unit-Testable // Josh Kodroff, Code Craftsman</title>
+
+        <meta charset="utf-8">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    <meta name="description" content="">
+    <meta name="keywords" content="">
+    <meta name="author" content="">
+        <meta property="og:title" content="Making Entity Framework More Unit-Testable" />
+    <meta property="og:description" content="" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:url" content="http://joshkodroff.com/2015/08/08/making-entity-framework-more-testable/" />
+    
+
+    <link href="" rel="alternate" type="application/rss+xml" title="Josh Kodroff, Code Craftsman" />
+    <link rel="shortcut icon" href="/favicon.png">
+
+    <link href="http://joshkodroff.comwebfonts/ptserif/main.css" rel='stylesheet' type='text/css'>
+    <link href="http://joshkodroff.comwebfonts/source-code-pro/main.css" rel="stylesheet" type="text/css">
+
+    <link rel="stylesheet" href="http://joshkodroff.comcss/style.css">
+
+    <link href="http://gmpg.org/xfn/11" rel="profile">
+    
+    <meta name="generator" content="Hugo 0.29" />
+</head>
+
+
+<body>
+<div id="container">
+    <header id="header">
+    <div id="header-outer" class="outer">
+        <div id="header-inner" class="inner">
+            <a id="main-nav-toggle" class="nav-icon" href="javascript:;"></a>
+            <a id="logo" class="logo-text" href="http://joshkodroff.com">Josh Kodroff, Code Craftsman</a>
+            <nav id="main-nav">
+                
+                <a class="main-nav-link" href="/about">About</a>
+                
+                <a class="main-nav-link" href="/contact">Contact</a>
+                
+            </nav>
+            <nav id="sub-nav">
+                <div id="search-form-wrap">
+                </div>
+            </nav>
+        </div>
+    </div>
+</header>
+    <section id="main" class="outer">
+        <article class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        <header class="article-header">
+            <h1 class="article-title" itemprop="name">Making Entity Framework More Unit-Testable</h1>
+        </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+            <h2 id="abstract">Abstract</h2>
+
+<p>For developers using <a href="https://entityframework.codeplex.com/">Entity Framework</a>, unit testing code that depends on the <code>DbContext</code> class is not the easiest thing.  If we&rsquo;re interested in doing unit testing, we need to be able to use an in-memory (&ldquo;fake&rdquo; in <a href="http://martinfowler.com/articles/mocksArentStubs.html">Martin Fowler&rsquo;s terminology</a>) version of <code>DbContext</code> comprised of lists of objects so that our tests do not hit the database.  This series of posts takes you through my process in getting to a facade on top of Entity Framework that results in testable code and tests that are fast to write.</p>
+
+<p></p>
+
+<p><em>Note:</em> The issues described are only known to apply to Entity Framework &lt;= 6.x.  EF 7 is a complete rewrite, and things are very different.  See <a href="#entity-framework-7">here</a> for more details.</p>
+
+<h2 id="tl-dr">tl;dr</h2>
+
+<p>You can jump directly to <a href="https://github.com/jkodroff/ef-testable">the code</a>, or you can reference <a href="https://www.nuget.org/packages/EntityFrameworkTestable/">the client code NuGet package</a> in your main assemblies and <a href="https://www.nuget.org/packages/EntityFrameworkTestable.Testing/">the testing code NuGet package</a> in your testing assemblies.</p>
+
+<h2 id="part-1-getting-to-a-reusable-abstraction">Part 1 - Getting to a Reusable Abstraction</h2>
+
+<p>We want to depend on interfaces instead of concrete implementations, per the &ldquo;D&rdquo; (<a href="https://en.wikipedia.org/wiki/Dependency_inversion_principle">Dependency Inversion</a>) in <a href="https://en.wikipedia.org/wiki/SOLID_(object-oriented_design)">SOLID</a>.  So how can we do this with Entity Framework?</p>
+
+<p>Let&rsquo;s suppose we have the following <code>DbContext</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">public class MyDbContext : DbContext 
+</span><span style="">{
+</span><span style="">  public DbSet&lt;Order&gt; Orders { get; set; }
+</span><span style="">  // a bunch of other tables...
+</span><span style="">}</span></code></pre>
+</div>
+<p>&hellip; we might be consuming it like this:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">var db = new MyDbContext();
+</span><span style="">var order = db.Orders.Single(x =&gt; x.Id == id);</span></code></pre>
+</div>
+<p>&hellip; so if we naively extract an interface, then it will lead to something like this:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">public interface IMyDbContext
+</span><span style="">{
+</span><span style="">  DbSet&lt;Order&gt; Orders { get; set; }
+</span><span style="">  // a bunch of other tables
+</span><span style="">}</span></code></pre>
+</div>
+<p>And that&rsquo;s not so good.</p>
+
+<p>We have to change <code>IMyDbContext</code> along with <code>MyDbContext</code> every time we add a table to the database: We would have to add <code>DbSet&lt;T&gt;</code> properties to both the interface and the implementation.  We also cannot reuse this code across projects because our interface is tightly coupled to the particular database schema we&rsquo;re using.</p>
+
+<p>Fortunately, <code>DbContext</code> exposes a <code>Set&lt;T&gt;()</code> method (<a href="https://msdn.microsoft.com/en-us/library/Gg696521%28v=VS.113%29.aspx">MSDN Docs</a>) which can help us solve this problem.  So, if we change how we consume our <code>DbContext</code> from <code>db.Orders</code> to <code>db.Set&lt;Order&gt;()</code>, we can now define our interface like this:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">public interface IDataSession : IDisposable
+</span><span style="">{
+</span><span style="">  IDbSet&lt;T&gt; Set&lt;T&gt;() where T : class;
+</span><span style="">  
+</span><span style="">  // We also obviously need to persist our changes, so:
+</span><span style="">  void SaveChanges();
+</span><span style="">
+</span><span style="">  // I also have use cases where I need to drop down to raw SQL, so:
+</span><span style="">  int SqlCommand(string sql, params object[] parameters);
+</span><span style="">}</span></code></pre>
+</div>
+<p>The name change on the interface from <code>IMyDbContext</code> to <code>IDataSession</code> is intentional: it reflects that this interface is no longer a representation of a <em>particular</em> database context (i.e. <code>MyDbContext</code>), but <em>any</em> database context.  And we can create an implementation for it like so:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">public class EntityDataSession : IDataSession
+</span><span style="">{
+</span><span style="">    // This is the EF class, not ours:
+</span><span style="">    private DbContext _dbContext;
+</span><span style="">
+</span><span style="">    public EntityDataSession(DbContext dbContext)
+</span><span style="">    {
+</span><span style="">        _dbContext = dbContext;
+</span><span style="">    }
+</span><span style="">
+</span><span style="">    public void Dispose()
+</span><span style="">    {
+</span><span style="">        _dbContext.Dispose();
+</span><span style="">    }
+</span><span style="">
+</span><span style="">    public IDbSet&lt;T&gt; Set&lt;T&gt;() where T : class
+</span><span style="">    {
+</span><span style="">        return _dbContext.Set&lt;T&gt;();
+</span><span style="">    }
+</span><span style="">
+</span><span style="">    public void SaveChanges()
+</span><span style="">    {
+</span><span style="">        _dbContext.SaveChanges();
+</span><span style="">    }
+</span><span style="">
+</span><span style="">    public int SqlCommand(string sql, params object[] parameters)
+</span><span style="">    {
+</span><span style="">        return _dbContext.Database.ExecuteSqlCommand(sql, parameters);
+</span><span style="">    }
+</span><span style="">}</span></code></pre>
+</div>
+<p>We can use our DI container to give us an <code>EntityDataSession</code> with whatever <code>DbContext</code> we want, and we can reuse this code across projects.  The code below is for <a href="http://docs.structuremap.net/">StructureMap</a>) but your DI container should have similar constructs:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">// Somewhere in your application&#39;s startup code:
+</span><span style="">For&lt;IDataSession&gt;().Use&lt;EntityDataSession&gt;();
+</span><span style="">
+</span><span style="">// Because EntityDataSession takes a DbContext as a constructor param:
+</span><span style="">For&lt;System.Data.Entity.DbContext&gt;().Use&lt;MyDbContext&gt;();</span></code></pre>
+</div>
+<p>And we might consume our code like this.  (Sending your data model directly to a view is not advisable for production-quality code, but this is just an example):</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">public class SomeController : Controller 
+</span><span style="">{
+</span><span style="">    private IDataSession _dataSession;
+</span><span style="">
+</span><span style="">    public SomeController(IDataSession dataSession) {
+</span><span style="">        _dataSession = dataSession
+</span><span style="">    }
+</span><span style="">
+</span><span style="">    public ActionResult Index() {
+</span><span style="">        return View(_dataSession.Set&lt;Orders&gt;())
+</span><span style="">    }
+</span><span style="">}</span></code></pre>
+</div>
+<h2 id="part-2-testing">Part 2 - Testing</h2>
+
+<p>We want to be able to write our tests with a minimum of incidental complexity.  In other words, we want to be able to create an in-memory implementation of <code>IDataSession</code>, specifying the tables and entities we need for the test - no more, and no less.  In order to provide a super-simple interface for our tests, we need to hide some complexity within our <code>IDataSession</code> wrapper.</p>
+
+<p>Unfortunately, I was not able to accomplish this succintly without including a mocking library, albeit <a href="http://www.moqthis.com/">a very nicely written one</a>).  Any suggestions for improvement here would be greatly appreciated.  The implementation follows:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">// Only to be included in test assemblies:
+</span><span style="">public static class DataHelper
+</span><span style="">{
+</span><span style="">    public static IDataSession Session()
+</span><span style="">    {
+</span><span style="">        return new MockDataSession();
+</span><span style="">    }
+</span><span style="">
+</span><span style="">    public static IDataSession Session&lt;T&gt;(params T[] set) where T : class
+</span><span style="">    {
+</span><span style="">        return Session().AddSet(set);
+</span><span style="">    }
+</span><span style="">
+</span><span style="">    public static IDataSession AddSet&lt;T&gt;(this IDataSession session, params T[] set) where T : class
+</span><span style="">    {
+</span><span style="">        (session as MockDataSession)
+</span><span style="">            .Mock
+</span><span style="">            .Setup(x =&gt; x.Set&lt;T&gt;())
+</span><span style="">            .Returns(set == null ? new FakeDbSet&lt;T&gt;() : new FakeDbSet&lt;T&gt;(set));
+</span><span style="">
+</span><span style="">        return mockSession;
+</span><span style="">    }
+</span><span style="">
+</span><span style="">    private class MockDataSession : IDataSession
+</span><span style="">    {
+</span><span style="">        private Mock&lt;IDataSession&gt; _mock = new Mock&lt;IDataSession&gt;();
+</span><span style="">
+</span><span style="">        internal Mock&lt;IDataSession&gt; Mock
+</span><span style="">        {
+</span><span style="">            get { return _mock; }
+</span><span style="">        }
+</span><span style="">
+</span><span style="">        public void Dispose() { }
+</span><span style="">
+</span><span style="">        IDbSet&lt;T&gt; IDataSession.Set&lt;T&gt;()
+</span><span style="">        {
+</span><span style="">            return _mock.Object.Set&lt;T&gt;();
+</span><span style="">        }
+</span><span style="">
+</span><span style="">        // This doesn&#39;t seem to be something that&#39;s really testable,
+</span><span style="">        // so we&#39;ll concede this and throw an exception:
+</span><span style="">        public IEnumerable&lt;T&gt; SqlQuery&lt;T&gt;(string sql, params object[] parameters)
+</span><span style="">        {
+</span><span style="">            throw new NotImplementedException();
+</span><span style="">        }
+</span><span style="">
+</span><span style="">        // There&#39;s nothing to &#34;save&#34;, per se so it&#39;s just a NOOP
+</span><span style="">        public void SaveChanges() { }
+</span><span style="">    }
+</span><span style="">}</span></code></pre>
+</div>
+<h2 id="part-3-putting-it-all-together">Part 3 - Putting it All Together</h2>
+
+<p>Now that we have structured our client code so that it depends on interfaces instead of implementations, and we have an in-memory version of <code>IDataStore</code>, we can create tests that are fast to write, fast to execute, and test the necessary behavior of our program.  Here&rsquo;s an example of how we can do this:</p>
+
+<p>Let&rsquo;s suppose we have a business rule that states &ldquo;customers on credit hold cannot place new orders&rdquo; (because they haven&rsquo;t paid their bills).  That rule might give us a controller that looks like this:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">public class OrdersController : Controller 
+</span><span style="">{
+</span><span style="">    // In a real application, we probably would not have IDataSession 
+</span><span style="">    // as a direct dependency in a controller, but for our purposes 
+</span><span style="">    // this is fine.
+</span><span style="">    private IDataSession _dataSession;
+</span><span style="">
+</span><span style="">    public OrdersController(IDataSession dataSession) {
+</span><span style="">        _dataSession = dataSession;
+</span><span style="">    }
+</span><span style="">
+</span><span style="">    public ActionResult New(Guid customerId) {
+</span><span style="">        if (_dataSession.Set&lt;Customer&gt;().Single(x =&gt; x.Id == customerId).OnCreditHold)
+</span><span style="">            throw new Exception(&#34;Customer is on credit hold and cannot place new orders.&#34;);
+</span><span style="">
+</span><span style="">        return View(new NewOrderViewModel {
+</span><span style="">            CustomerId = customerId;  
+</span><span style="">        });
+</span><span style="">    }
+</span><span style="">}</span></code></pre>
+</div>
+<p>We can now write a test for this controller like this (the assertion syntax comes from <a href="http://www.fluentassertions.com/">FluentAssertions</a>):</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">[TestFixture]
+</span><span style="">public class OrdersControllerTests
+</span><span style="">{
+</span><span style="">    [Test]
+</span><span style="">    public void New_CustomerOnCreditHold()
+</span><span style="">    {
+</span><span style="">        var customerId = Guid.NewGuid();
+</span><span style="">
+</span><span style="">        var data = DataHelper
+</span><span style="">            .Session(new Customer {
+</span><span style="">                Id = customerId  
+</span><span style="">            });
+</span><span style="">
+</span><span style="">        new OrdersController(data)
+</span><span style="">            .Invoking(x =&gt; x.New(customerId))
+</span><span style="">            .ShouldThrow&lt;Exception&gt;(&#34;*on credit hold*&#34;);
+</span><span style="">            //                      ^^^^^^^^^^^^^^^^^^
+</span><span style="">            // FluentAssertions will accept wildcard characters for
+</span><span style="">            // matching exception text.
+</span><span style="">    }
+</span><span style="">}</span></code></pre>
+</div>
+<p>And that&rsquo;s it!</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>Entity Framework can be a useful tool in the toolbelt, but it requires a little bit of work on top to keep your code testable.  Doing that work is well worth the gains in the ability to write tests that are fast to write, fast to execute, and let you focus on the business logic of your application.</p>
+
+<p><a name="entity-framework-7"></a>
+Happy coding!</p>
+
+<h2 id="update-2015-11-26-a-note-on-entity-framework-7">UPDATE 2015-11-26: A Note on Entity Framework 7</h2>
+
+<p>I tried updating the code to use Entity Framework 7 and found that things are quite different, as one would expect with a complete rewrite.  This isn&rsquo;t the most informed advice as I&rsquo;ve only worked with EF 7 for a few hours, but it looks like the problems this code solves are now covered by the <a href="https://www.nuget.org/packages/EntityFramework.InMemory">EntityFramework.InMemory</a> package.</p>
+        </div>
+
+        
+        
+        <div class="article-toc" >
+            <h3>Contents</h3>
+            <nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li><a href="#abstract">Abstract</a></li>
+<li><a href="#tl-dr">tl;dr</a></li>
+<li><a href="#part-1-getting-to-a-reusable-abstraction">Part 1 - Getting to a Reusable Abstraction</a></li>
+<li><a href="#part-2-testing">Part 2 - Testing</a></li>
+<li><a href="#part-3-putting-it-all-together">Part 3 - Putting it All Together</a></li>
+<li><a href="#conclusion">Conclusion</a></li>
+<li><a href="#update-2015-11-26-a-note-on-entity-framework-7">UPDATE 2015-11-26: A Note on Entity Framework 7</a></li>
+</ul></li>
+</ul>
+</nav>
+        </div>
+        
+        
+
+        
+
+
+        
+    </div>
+</article>
+
+        
+    </section>
+    <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2017 Josh Kodroff, Code Craftsman&nbsp;
+            Powered by <a href="https://gohugo.io" target="_blank">Hugo</a> with theme <a href="https://github.com/carsonip/hugo-theme-minos">Minos</a>
+        </div>
+    </div>
+    
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/tomorrow-night.min.css" integrity="sha256-2wL88NKUqvJi/ExflDzkzUumjUM73mcK2gBvBBeLvTk=" crossorigin="anonymous" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js" integrity="sha256-KbfTjB0WZ8vvXngdpJGY3Yp3xKk+tttbqClO11anCIU=" crossorigin="anonymous"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+
+    
+    <script>
+        document.getElementById('main-nav-toggle').addEventListener('click', function () {
+            var header = document.getElementById('header');
+            if (header.classList.contains('mobile-on')) {
+                header.classList.remove('mobile-on');
+            } else {
+                header.classList.add('mobile-on');
+            }
+        });
+    </script>
+</footer>
+</div>
+</body>
+</html>

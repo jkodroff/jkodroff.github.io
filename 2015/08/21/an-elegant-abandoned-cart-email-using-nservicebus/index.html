@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>An Elegant Abandoned Cart Email Using NServiceBus // Josh Kodroff, Code Craftsman</title>
+
+        <meta charset="utf-8">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    <meta name="description" content="">
+    <meta name="keywords" content="">
+    <meta name="author" content="">
+        <meta property="og:title" content="An Elegant Abandoned Cart Email Using NServiceBus" />
+    <meta property="og:description" content="" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:url" content="http://joshkodroff.com/2015/08/21/an-elegant-abandoned-cart-email-using-nservicebus/" />
+    
+
+    <link href="" rel="alternate" type="application/rss+xml" title="Josh Kodroff, Code Craftsman" />
+    <link rel="shortcut icon" href="/favicon.png">
+
+    <link href="http://joshkodroff.comwebfonts/ptserif/main.css" rel='stylesheet' type='text/css'>
+    <link href="http://joshkodroff.comwebfonts/source-code-pro/main.css" rel="stylesheet" type="text/css">
+
+    <link rel="stylesheet" href="http://joshkodroff.comcss/style.css">
+
+    <link href="http://gmpg.org/xfn/11" rel="profile">
+    
+    <meta name="generator" content="Hugo 0.29" />
+</head>
+
+
+<body>
+<div id="container">
+    <header id="header">
+    <div id="header-outer" class="outer">
+        <div id="header-inner" class="inner">
+            <a id="main-nav-toggle" class="nav-icon" href="javascript:;"></a>
+            <a id="logo" class="logo-text" href="http://joshkodroff.com">Josh Kodroff, Code Craftsman</a>
+            <nav id="main-nav">
+                
+                <a class="main-nav-link" href="/about">About</a>
+                
+                <a class="main-nav-link" href="/contact">Contact</a>
+                
+            </nav>
+            <nav id="sub-nav">
+                <div id="search-form-wrap">
+                </div>
+            </nav>
+        </div>
+    </div>
+</header>
+    <section id="main" class="outer">
+        <article class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        <header class="article-header">
+            <h1 class="article-title" itemprop="name">An Elegant Abandoned Cart Email Using NServiceBus</h1>
+        </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+            <h2 id="abstract">Abstract</h2>
+
+<p>Some of the toughest requirements to model in enterprise development are business rules that involve the dimension of time.  In this post I&rsquo;ll show you how to fulfill those types of requirements in an elegant, testable, and scalable way using a message-driven style with <a href="http://particular.net/nservicebus">NServiceBus</a>.</p>
+
+<h2 id="tl-dr">tl;dr</h2>
+
+<p>If you&rsquo;re familiar NServiceBus and specifically its <a href="docs.particular.net/nservicebus/sagas/">sagas feature</a>, you can check out <a href="https://github.com/jkodroff/nsb-abandoned-cart">the code on GitHub</a>.  Of particular interest would be <a href="https://github.com/jkodroff/nsb-abandoned-cart/blob/master/src/Server/Saga.cs">the saga</a> and <a href="https://github.com/jkodroff/nsb-abandoned-cart/blob/master/src/Server.Tests/SagaTests.cs">its tests</a>.  There&rsquo;s also a <a href="https://github.com/jkodroff/nsb-abandoned-cart/blob/master/src/Client/Program.cs">console app client</a> that will let you play around.</p>
+
+<p></p>
+
+<h2 id="a-common-requirement-and-a-common-implementation">A Common Requirement and a Common Implementation</h2>
+
+<p>A common requirement in eCommerce systems might go like this:</p>
+
+<blockquote>
+<p>If a customer adds an item to their cart and does not complete the checkout process within <code>$SOME_AMOUNT_OF_TIME</code>, send them an email reminding them that they have items in their cart.</p>
+</blockquote>
+
+<p>Many systems will solve this problem using a batch job.  It&rsquo;ll go something like this:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">var abandonedCartThreshold = TimeSpan.FromDays(1);
+</span><span style="">
+</span><span style="">foreach (cart in allCarts) { // a cart disappears when it becomes an order
+</span><span style="">    if (cart.Items.Any(x =&gt; DateTime.UtcNow - x.CreatedOn &lt;= abandonedCartThreshold) {
+</span><span style="">        // fetch customer to whom the cart belongs
+</span><span style="">        // send email
+</span><span style="">    }
+</span><span style="">}</span></code></pre>
+</div>
+<p>This might be fine for a simple system with low numbers of customers, but for most real-world systems there&rsquo;s several drawbacks with this approach that we need to consider:</p>
+
+<ol>
+<li><strong>It&rsquo;s slow, especially if you&rsquo;re sending the email synchronously:</strong> Network operations like sending email are the slowest types of operations.  And if our business is doing well, has tons of customers, and the nightly job&rsquo;s time exceeds 24 hours, we&rsquo;re in big trouble because it will never complete.  A single process cannot handle the load, so we&rsquo;re going to have to get into multiple processes with batching.  That&rsquo;s going to get ugly.</li>
+<li><strong>We have to keep track of what&rsquo;s already been sent:</strong> Customers <em>really</em> don&rsquo;t like getting duplicate emails. If we have an error in the middle of the loop, we will have to keep track of which emails have already been sent in order to avoid annoyed customers.</li>
+<li><strong>It doesn&rsquo;t deal with network partitions:</strong> We have to handle retrying the job in the event that something is seriously wrong, e.g. the mail server is unavailable.  In many systems this will involve an administrator or developer manually running the process again.  That&rsquo;s not the phone call you want to receive that wakes you up.</li>
+<li><strong>It&rsquo;s not as precise as it could be:</strong> We&rsquo;re sending the email every night.  While an abandoned cart email probably isn&rsquo;t critical to be sent <em>exactly</em> <code>$SOME_AMOUNT_OF_TIME</code> after the last item is added to the cart, there are other communications that may be, e.g. if payment could not be captured on a large order, so learning to be precise here has applications in other areas.</li>
+<li><strong>The code doesn&rsquo;t adapt well for new requirements:</strong> If we want to, e.g send several follow-up emails after 7 and 30 days, we&rsquo;re going to need to add yet some more fields to the DB for every customer and keep track of that state as well.</li>
+<li><strong>It doesn&rsquo;t deal well with problems like invalid data:</strong> If we make a mistake in our error handling or our logic (e.g. if we run into an unexpected bug with 1 specific customer without a valid email address, <em>who was undoubtedly imported directly into the database, skipping our painstakingly crafted validation in our application code</em> (because that&rsquo;s what happens out there in the real world), our process will die.  Ok, so we can add try/catch block.  And we need to add tests for that.  And if you are inclinded towards software craftsmanship, it should strike you as wrong that we&rsquo;re going to retry the same broken customer every time we run the job, so now we need to add even more state via a flag to make sure we don&rsquo;t send the email to a customer who has failed <code>$SOME_NUMBER_OF_TIMES</code>.  That&rsquo;s a lot of additional logic we need to account for.</li>
+<li><strong>It&rsquo;s difficult to test:</strong>  How can we tell how this thing going to perform in production?  How can we be confident that it works correctly?  The state that the job encompasses includes all carts in the system, so it&rsquo;s difficult to say short of creating 10,000 carts and customers, then sending 10,000 emails.  That can run into issues like getting your employer blacklisted for bad email behavior.   Of course, we can use things like <a href="https://en.wikipedia.org/wiki/Dependency_injection">dependency injection</a> for testing, but because we&rsquo;re not sending a real email, we won&rsquo;t get anything like production performance.</li>
+</ol>
+
+<p>Those are pretty significant issues, so what are we going to do?</p>
+
+<h2 id="enter-the-saga">Enter The Saga</h2>
+
+<p>Luckily, there&rsquo;s a better way to do this: The saga pattern is the right tool for this job. It&rsquo;s tricky to describe a saga conscisely, so here&rsquo;s a list of things <em>about sagas</em> that might help you conceptualize them:</p>
+
+<ol>
+<li><strong>They&rsquo;re state machines:</strong> You can think of them like a flow chart that represents a slow-running business process.  Where &ldquo;slow-running&rdquo; is defined as &ldquo;at least computer time slow, and maybe even human-time slow&rdquo;, e.g. an ordering process that requires multiple calls to HTTP-based APIs or&hellip; an abandoned cart email that needs to be sent 1 day after the last item is added to the cart (fancy that!).</li>
+<li><strong>They&rsquo;re coordinators:</strong> They wait for things to happen (e.g. for the warehouse to tell us that an order has shipped), and then they tell the system to do things (e.g. charge the customers card, send the customer a email telling them their order has shipped).</li>
+<li><strong>They&rsquo;re persistent entities:</strong> Because the processes they model are slow-running, they have to persist the state of the process after each step is done.  We can&rsquo;t expect to keep this process running in memory for 3 days while a placed order is packaged at a warehouse.  Because they&rsquo;re loaded by a unique identifier they are <a href="http://martinfowler.com/bliki/EvansClassification.html">entities</a> domain-driven design terms.  (They&rsquo;re also <a href="http://stackoverflow.com/questions/1958621/whats-an-aggregate-root">aggregate roots</a>, although I think this distinction can be confusing so feel free to ignore it.)<br /></li>
+</ol>
+
+<p>We also get the following benefits with NServiceBus&rsquo; implementation of sagas:</p>
+
+<ol>
+<li><strong>Retrying failed messages:</strong> Sagas in NServiceBus are also message handlers and NServiceBus message handlers <a href="http://docs.particular.net/nservicebus/errors/automatic-retries">automatically retry failed messages</a>.  This feature is very very useful when dealing with, e.g <a href="https://twitter.com/search?q=mailgun%20%5Bstatus%5D&amp;src=typd">a temporary outage on our mail service</a>.</li>
+<li><strong>Persisting state between messages:</strong> The NServiceBus <code>Saga</code> class (from which we inherit) is already designed to handle persisting the state after each message in the saga is handled.  More code we don&rsquo;t have to write.</li>
+<li><strong>The dimension of time can easily be modeled and tested:</strong> NServiceBus sagas allow us to express a process over time through its <a href="http://docs.particular.net/nservicebus/sagas/timeouts">timeouts feature</a>.  This feature is going to be key to implementing our requirement as you&rsquo;ll see very soon.</li>
+<li><strong>Our saga will run asynchronously:</strong> NServiceBus message handlers (which include sagas) run asynchronously, which will allow us to <a href="http://docs.particular.net/samples/scaleout/">scale out</a> by running multiple copies of our saga endpoint if we need to.</li>
+</ol>
+
+<h2 id="creating-our-nservicebus-saga-first-steps">Creating our NServiceBus Saga: First Steps</h2>
+
+<p><strong>Note:</strong> This section assumes you have a basic understanding of NServiceBus&rsquo; message types.  If you don&rsquo;t you should <a href="http://docs.particular.net/nservicebus/messaging/messages-events-commands">read this</a>.</p>
+
+<p>The first thing we need to do is to create some messages which will be sent by our client application via NServiceBus&rsquo; <code>Bus.Send()</code> method.  This is probably an ASP.NET MVC application, but they could just as easily be sent from a console application, or anywhere really.  If we&rsquo;re following the typical messaging semantics these should be events, but because there&rsquo;s a high likelihood they are sent from a website, we should not use <code>Bus.Publish()</code> (<a href="http://www.make-awesome.com/2010/10/why-not-publish-nservicebus-messages-from-a-web-application/">detailed explanation here</a>).</p>
+
+<p>Here&rsquo;s our messages:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">// When we get one of these, we will reset the countdown to sending the email:
+</span><span style="">public class ItemAddedToCart : IMessage
+</span><span style="">{
+</span><span style="">    public string UserName { get; set; }
+</span><span style="">}
+</span><span style="">
+</span><span style="">// When we get one of these, we will cancel the entire 
+</span><span style="">// process because the the cart is no longer abandoned:
+</span><span style="">public class OrderSubmitted : IMessage
+</span><span style="">{
+</span><span style="">    public string UserName { get; set; }
+</span><span style="">}</span></code></pre>
+</div>
+<p>Now we&rsquo;re ready to create our saga.  When we create a saga in NServiceBus, we need to define 2 things:</p>
+
+<ol>
+<li>The class which will hold the saga&rsquo;s state in between messages.  This is where we&rsquo;ll keep track of which messages were received and any state that we need to keep track of between messages.</li>
+<li>The message that begins the saga.</li>
+</ol>
+
+<p>Let&rsquo;s do that now:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">public class AbandonedCartSagaData : IContainSagaData
+</span><span style="">{
+</span><span style="">    // Built-in saga properties:
+</span><span style="">    public Guid Id { get; set; }
+</span><span style="">    public string Originator { get; set; }
+</span><span style="">    public string OriginalMessageId { get; set; }
+</span><span style="">}
+</span><span style="">
+</span><span style="">public class AbandonedCartSaga : 
+</span><span style="">  Saga&lt;AbandonedCartSagaData&gt;,
+</span><span style="">  IAmStartedByMessages&lt;ItemAddedToCart&gt;
+</span><span style="">{
+</span><span style="">    public void Handle(ItemAddedToCart message) { }
+</span><span style="">}</span></code></pre>
+</div>
+<p>We need to tell NServiceBus how to get from an incoming message to the right saga (one saga per customer, keyed off the username).</p>
+
+<p>Add this to <code>AbandonedCartSagaData</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">// This needs to be unique so that we can scale out, or 
+</span><span style="">// we might get 2 Sagas with the same username, 
+</span><span style="">// per https://twitter.com/UdiDahan/status/587896128688951297
+</span><span style="">[Unique]
+</span><span style="">public string UserName { get; set; }</span></code></pre>
+</div>
+<p>And add this to <code>AbandonedCartSaga</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">protected override void ConfigureHowToFindSaga(SagaPropertyMapper&lt;AbandonedCartSagaData&gt; mapper)
+</span><span style="">{
+</span><span style="">    mapper
+</span><span style="">        .ConfigureMapping&lt;ItemAddedToCart&gt;(x =&gt; x.UserName)
+</span><span style="">        .ToSaga(x =&gt; x.UserName);
+</span><span style="">
+</span><span style="">    mapper
+</span><span style="">        .ConfigureMapping&lt;OrderSubmitted&gt;(x =&gt; x.UserName)
+</span><span style="">        .ToSaga(x =&gt; x.UserName);
+</span><span style="">}</span></code></pre>
+</div>
+<h2 id="creating-our-nservicebus-saga-business-logic">Creating our NServiceBus Saga: Business Logic</h2>
+
+<p>First we need to understand <a href="http://docs.particular.net/nservicebus/sagas/timeouts">timeouts in NServiceBus sagas</a>.  A timeout message is like a programmable boomerang: the saga sends the timeout message (which can contain whatever additional data you want), and it&rsquo;ll &ldquo;come back&rdquo; to the saga in whatever <code>TimeSpan</code> you specify when you call <code>RequestTimeout()</code> from within the saga.</p>
+
+<p>We&rsquo;re going to model our business process in our saga like this:</p>
+
+<ol>
+<li>Every time we receive <code>ItemAddedToCart</code>, we&rsquo;ll send a timeout message <code>AbandonedCartTimeOut</code> with a newly generated unique identifier.  We&rsquo;ll also store this ID in the saga&rsquo;s data.</li>
+<li>When we receive <code>AbandonedCartTimeOut</code>, if the ID of the incoming message does not match ID of the last sent message in the saga, we&rsquo;ll know that an item has been added to the cart since the timeout message was issued.  If the IDs match, we&rsquo;ll send the email and complete the saga.</li>
+<li>If we receive an <code>OrderSubmitted</code> message, we don&rsquo;t need to send the email because the customer has completed the checkout process and we&rsquo;ll complete the saga.</li>
+</ol>
+
+<p>Let&rsquo;s do that now.  First, we&rsquo;ll need to create our timeout message.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">public class AbandonedCartTimeOut : IMessage
+</span><span style="">{
+</span><span style="">  public Guid Id { get; set; }
+</span><span style="">}</span></code></pre>
+</div>
+<p>Add this to <code>AbandonedCartEmailSagaData</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">public Guid LastTimeOutId { get; set; }</span></code></pre>
+</div>
+<p>Add this to <code>AbandonedCartEmailSaga</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">public void Handle(ItemAddedToCart message)
+</span><span style="">{
+</span><span style="">    Data.UserName = message.UserName;
+</span><span style="">    Data.LastTimeOutId = Guid.NewGuid();
+</span><span style="">
+</span><span style="">
+</span><span style="">    RequestTimeout(
+</span><span style="">        // We&#39;re using 5 seconds because it makes it easy to test,
+</span><span style="">        // but in a real system, we might want to provide this via
+</span><span style="">        // a configurable variable.
+</span><span style="">        TimeSpan.FromSeconds(5), 
+</span><span style="">        new AbandonedCartTimeout {
+</span><span style="">            Id = Data.LastTimeOutId
+</span><span style="">        }
+</span><span style="">    );
+</span><span style="">}
+</span><span style="">
+</span><span style="">public void Handle(OrderSubmitted message)
+</span><span style="">{
+</span><span style="">    MarkAsComplete();
+</span><span style="">}
+</span><span style="">
+</span><span style="">public void Timeout(AbandonedCartTimeout state)
+</span><span style="">{
+</span><span style="">    if (Data.LastTimeOutId != state.Id) {
+</span><span style="">        // This is not the last timeout issued, so ignore it.
+</span><span style="">        return;
+</span><span style="">      }
+</span><span style="">
+</span><span style="">    Bus.SendLocal(new SendAbandonedCartEmail {
+</span><span style="">        UserName = Data.UserName
+</span><span style="">    });
+</span><span style="">
+</span><span style="">    MarkAsComplete();
+</span><span style="">}</span></code></pre>
+</div>
+<h2 id="how-to-test-our-nservicebus-saga">How to Test Our NServiceBus Saga</h2>
+
+<p>There&rsquo;s 2 philosophies when it comes to testing NServiceBus sagas:</p>
+
+<ol>
+<li><strong>Unit Testing:</strong> We test each message handler in the saga in isolation, setting up the saga&rsquo;s internal state (i.e. <code>AbandonedCartSagaData</code> in our case) for each message, possibly with several tests for each message handler (if the handler can exhibit several different behaviors).</li>
+<li><strong>End-to-End Testing:</strong> We test the entire flow of a saga from start to completion.<br /></li>
+</ol>
+
+<p>I think the latter approach provides some significant advantages:</p>
+
+<ol>
+<li><strong>It more closely resembles real-world usage:</strong> Our saga exists in the wild as a thing that handles a distinct series of messages, with its state managed internally, so it&rsquo;s better to test it that way.</li>
+<li><strong>It requires less code:</strong> NServiceBus&rsquo; testing facilities provide a convenient way to do this type of testing via <a href="https://en.wikipedia.org/wiki/Method_chaining">method chaining</a>.</li>
+</ol>
+
+<h2 id="actually-testing-our-nservicebus-saga">Actually Testing Our NServiceBus Saga</h2>
+
+<p>We have 2 distinct scenarios.  First, let&rsquo;s do the &ldquo;happy path&rdquo; (from the view of an eCommerce retailer) where the order gets placed.  (The assertion methods pictured below are done with <a href="http://www.fluentassertions.com/">FluentAssertions</a>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">[Test]
+</span><span style="">public void OrderSubmitted()
+</span><span style="">{
+</span><span style="">    var userName = &#34;sales@joshkodroff.com&#34;;
+</span><span style="">    var timeoutId1 = Guid.Empty;
+</span><span style="">
+</span><span style="">    Test
+</span><span style="">        .Saga&lt;AbandonedCartSaga&gt;()
+</span><span style="">        .ExpectTimeoutToBeSetIn&lt;AbandonedCartTimeout&gt;((msg, span) =&gt; {
+</span><span style="">            timeoutId1 = msg.Id;
+</span><span style="">            span.Should().Be(TimeSpan.FromSeconds(5));
+</span><span style="">        })
+</span><span style="">        .When(saga =&gt; saga.Handle(new ItemAddedToCart {
+</span><span style="">            UserName = userName
+</span><span style="">        }))
+</span><span style="">        .ExpectTimeoutToBeSetIn&lt;AbandonedCartTimeout&gt;((msg, span) =&gt; {
+</span><span style="">            // just to make sure we&#39;re generating new ids
+</span><span style="">            msg.Id.Should().NotBe(timeoutId1); 
+</span><span style="">            
+</span><span style="">            span.Should().Be(TimeSpan.FromSeconds(5));
+</span><span style="">        })
+</span><span style="">        .When(saga =&gt; saga.Handle(new ItemAddedToCart {
+</span><span style="">            UserName = userName
+</span><span style="">        }))
+</span><span style="">        // just a dummy check.  no message should be sent
+</span><span style="">        .ExpectNotSend&lt;SendAbandonedCartEmail&gt;(x =&gt; x != null) 
+</span><span style="">        .When(saga =&gt; {
+</span><span style="">            // the first timeout comes back (which should be ignored):
+</span><span style="">            saga.Timeout(new AbandonedCartTimeout {
+</span><span style="">                Id = timeoutId1
+</span><span style="">            });
+</span><span style="">
+</span><span style="">            saga.Handle(new OrderSubmitted {
+</span><span style="">                UserName = userName
+</span><span style="">            });
+</span><span style="">        })
+</span><span style="">        .AssertSagaCompletionIs(true);
+</span><span style="">}</span></code></pre>
+</div>
+<p>And now we have the &ldquo;less happy&rdquo; path where the followup email needs to be sent:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">[Test]
+</span><span style="">public void OrderNotSubmitted()
+</span><span style="">{
+</span><span style="">    var userName = &#34;sales@joshkodroff.com&#34;;
+</span><span style="">    var timeoutId1 = Guid.Empty;
+</span><span style="">    var timeoutId2 = Guid.Empty;
+</span><span style="">
+</span><span style="">    Test
+</span><span style="">        .Saga&lt;AbandonedCartSaga&gt;()
+</span><span style="">        .ExpectTimeoutToBeSetIn&lt;AbandonedCartTimeout&gt;((msg, span) =&gt; {
+</span><span style="">            timeoutId1 = msg.Id;
+</span><span style="">            span.Should().Be(TimeSpan.FromSeconds(5));
+</span><span style="">        })
+</span><span style="">        .When(saga =&gt; saga.Handle(new ItemAddedToCart {
+</span><span style="">            UserName = userName
+</span><span style="">        }))
+</span><span style="">        .ExpectTimeoutToBeSetIn&lt;AbandonedCartTimeout&gt;((msg, span) =&gt; {
+</span><span style="">            timeoutId2 = msg.Id;
+</span><span style="">            span.Should().Be(TimeSpan.FromSeconds(5));
+</span><span style="">        })
+</span><span style="">        .When(saga =&gt; {
+</span><span style="">            saga.Handle(new ItemAddedToCart {
+</span><span style="">                UserName = userName
+</span><span style="">            });
+</span><span style="">
+</span><span style="">            // the first timeout comes back (which should be ignored):
+</span><span style="">            saga.Timeout(new AbandonedCartTimeout {
+</span><span style="">                Id = timeoutId1
+</span><span style="">            });
+</span><span style="">        })
+</span><span style="">        .ExpectSendLocal&lt;SendAbandonedCartEmail&gt;(msg =&gt; {
+</span><span style="">            msg.UserName.Should().Be(userName);
+</span><span style="">        })
+</span><span style="">        .When(saga =&gt; saga.Timeout(new AbandonedCartTimeout {
+</span><span style="">            Id = timeoutId2
+</span><span style="">        }))
+</span><span style="">        .AssertSagaCompletionIs(true);
+</span><span style="">}</span></code></pre>
+</div>
+<h2 id="possible-future-enhancements-and-conclusion">Possible Future Enhancements and Conclusion</h2>
+
+<p>What if we need to account for a new <code>ItemRemovedFromCart</code> message?  We&rsquo;d need to include the total number of items in the cart with the <code>ItemRemovedFromCart</code> message, and after that it&rsquo;s pretty simple: If <code>ItemRemovedFromCart.NumberOfCartItems</code> is zero, complete the saga because there&rsquo;s no items left in the cart.  If it&rsquo;s non-zero, then the handler has the same logic as <code>ItemAddedToCart</code>.  For testing, we&rsquo;ll need to add in a few of these messages to our happy path, then add in an additional test fixture or two that aseserts that the saga completes when there&rsquo;s no items left in the cart.)</p>
+
+<p>What if we want to send additional follow-up emails after 7 and 30 days?  Well that would be pretty simple to add:  Just add timeouts for 7 and 30 days and change when the saga completes (after the 3rd email is sent instead of a single email).  It should also be pretty easy to test: extend our happy path test with a couple more assertions for the additional emails, and add 2 more less-happy tests for the order being placed before those timeouts happen.</p>
+
+<p>We can see from the above examples that the saga is very well-suited to adapt to future changes in requirements.  I&rsquo;ve found NServiceBus sagas to be a fantastically-designed tool to handle some of the most difficult requirements I&rsquo;ve come across.  They take a minute to grok beacause they&rsquo;re so powerful, but once you have a good handle on their capabilities and get comfortable with how to fit them into your projects you can really, really get things done.</p>
+
+<p>Happy coding!</p>
+        </div>
+
+        
+        
+        <div class="article-toc" >
+            <h3>Contents</h3>
+            <nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li><a href="#abstract">Abstract</a></li>
+<li><a href="#tl-dr">tl;dr</a></li>
+<li><a href="#a-common-requirement-and-a-common-implementation">A Common Requirement and a Common Implementation</a></li>
+<li><a href="#enter-the-saga">Enter The Saga</a></li>
+<li><a href="#creating-our-nservicebus-saga-first-steps">Creating our NServiceBus Saga: First Steps</a></li>
+<li><a href="#creating-our-nservicebus-saga-business-logic">Creating our NServiceBus Saga: Business Logic</a></li>
+<li><a href="#how-to-test-our-nservicebus-saga">How to Test Our NServiceBus Saga</a></li>
+<li><a href="#actually-testing-our-nservicebus-saga">Actually Testing Our NServiceBus Saga</a></li>
+<li><a href="#possible-future-enhancements-and-conclusion">Possible Future Enhancements and Conclusion</a></li>
+</ul></li>
+</ul>
+</nav>
+        </div>
+        
+        
+
+        
+
+
+        
+    </div>
+</article>
+
+        
+    </section>
+    <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2017 Josh Kodroff, Code Craftsman&nbsp;
+            Powered by <a href="https://gohugo.io" target="_blank">Hugo</a> with theme <a href="https://github.com/carsonip/hugo-theme-minos">Minos</a>
+        </div>
+    </div>
+    
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/tomorrow-night.min.css" integrity="sha256-2wL88NKUqvJi/ExflDzkzUumjUM73mcK2gBvBBeLvTk=" crossorigin="anonymous" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js" integrity="sha256-KbfTjB0WZ8vvXngdpJGY3Yp3xKk+tttbqClO11anCIU=" crossorigin="anonymous"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+
+    
+    <script>
+        document.getElementById('main-nav-toggle').addEventListener('click', function () {
+            var header = document.getElementById('header');
+            if (header.classList.contains('mobile-on')) {
+                header.classList.remove('mobile-on');
+            } else {
+                header.classList.add('mobile-on');
+            }
+        });
+    </script>
+</footer>
+</div>
+</body>
+</html>
