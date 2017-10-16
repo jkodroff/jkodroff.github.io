@@ -3,6 +3,11 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
+    <loc>http://joshkodroff.com/post/barcamp-2017-talk/</loc>
+    <lastmod>2017-10-16T17:55:13-04:00</lastmod>
+  </url>
+  
+  <url>
     <loc>http://joshkodroff.com/2016/03/20/barcamp-2015-talk-slides-bronze-bullet-architecture/</loc>
     <lastmod>2016-03-20T21:04:32+00:00</lastmod>
   </url>
@@ -71,13 +76,13 @@
   
   <url>
     <loc>http://joshkodroff.com/</loc>
-    <lastmod>2016-03-20T21:04:32+00:00</lastmod>
+    <lastmod>2017-10-16T17:55:13-04:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
     <loc>http://joshkodroff.com/post/</loc>
-    <lastmod>2016-03-20T21:04:32+00:00</lastmod>
+    <lastmod>2017-10-16T17:55:13-04:00</lastmod>
     <priority>0</priority>
   </url>
   

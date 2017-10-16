@@ -6,10 +6,20 @@
     <description>Recent content in Posts on Josh Kodroff, Code Craftsman</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 20 Mar 2016 21:04:32 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 16 Oct 2017 17:55:13 -0400</lastBuildDate>
     
 	<atom:link href="http://joshkodroff.com/post/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Barcamp 2017 Talk - All About DevOps</title>
+      <link>http://joshkodroff.com/post/barcamp-2017-talk/</link>
+      <pubDate>Mon, 16 Oct 2017 17:55:13 -0400</pubDate>
+      
+      <guid>http://joshkodroff.com/post/barcamp-2017-talk/</guid>
+      <description>Here are the slides from my BarCamp Philly 2017 talk &amp;ldquo;All About DevOps&amp;rdquo;. We got into what the DevOps movement is, what benefits it can bring, and touched on how you might get started at your organization.
+ </description>
+    </item>
     
     <item>
       <title>Barcamp 2015 Talk Slides: Bronze Bullet Architecture</title>
