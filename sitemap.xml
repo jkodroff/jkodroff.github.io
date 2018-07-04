@@ -3,7 +3,17 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
-    <loc>http://joshkodroff.com/post/barcamp-2017-talk/</loc>
+    <loc>http://joshkodroff.com/post/2018_07_04_ci_cd_pipeline_terraform_atlantis/</loc>
+    <lastmod>2018-07-04T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://joshkodroff.com/post/2018_07_04_terraform_repo_structure/</loc>
+    <lastmod>2018-07-04T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://joshkodroff.com/post/2017_10_16_barcamp-2017-talk/</loc>
     <lastmod>2017-10-16T17:55:13-04:00</lastmod>
   </url>
   
@@ -76,13 +86,13 @@
   
   <url>
     <loc>http://joshkodroff.com/</loc>
-    <lastmod>2017-10-16T17:55:13-04:00</lastmod>
+    <lastmod>2018-07-04T00:00:00+00:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
     <loc>http://joshkodroff.com/post/</loc>
-    <lastmod>2017-10-16T17:55:13-04:00</lastmod>
+    <lastmod>2018-07-04T00:00:00+00:00</lastmod>
     <priority>0</priority>
   </url>
   

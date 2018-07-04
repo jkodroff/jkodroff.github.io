@@ -1,22 +1,43 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Josh Kodroff, Code Craftsman</title>
+    <title>Josh Kodroff, Technology Craftsman</title>
     <link>http://joshkodroff.com/</link>
-    <description>Recent content on Josh Kodroff, Code Craftsman</description>
+    <description>Recent content on Josh Kodroff, Technology Craftsman</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 16 Oct 2017 17:55:13 -0400</lastBuildDate>
+    <lastBuildDate>Wed, 04 Jul 2018 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="http://joshkodroff.com/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
+      <title>CI/CD for Infrastructure as Code with Terraform and Atlantis</title>
+      <link>http://joshkodroff.com/post/2018_07_04_ci_cd_pipeline_terraform_atlantis/</link>
+      <pubDate>Wed, 04 Jul 2018 00:00:00 +0000</pubDate>
+      
+      <guid>http://joshkodroff.com/post/2018_07_04_ci_cd_pipeline_terraform_atlantis/</guid>
+      <description>In this post, we&amp;rsquo;ll go over a complete workflow for continuous integration (CI) and continuous delivery (CD) for infrastructure as code (IaC) with just 2 tools: Terraform, and Atlantis.
+This post originally appeared in the 2nd Watch Company Blog.
+What is Terraform? So what is Terraform? According to the Terraform website:
+ Terraform is a tool for building, changing, and versioning infrastructure safely and efficiently. Terraform can manage existing and popular service providers as well as custom in-house solutions.</description>
+    </item>
+    
+    <item>
+      <title>Terraform Repository Structure</title>
+      <link>http://joshkodroff.com/post/2018_07_04_terraform_repo_structure/</link>
+      <pubDate>Wed, 04 Jul 2018 00:00:00 +0000</pubDate>
+      
+      <guid>http://joshkodroff.com/post/2018_07_04_terraform_repo_structure/</guid>
+      <description>When IT organizations adopt infrastructure as code (IaC), the benefits in productivity, quality, and ability to function at scale are manifold. However, the first few steps on the journey to full automation and immutable infrastructure bliss can be a major disruption to a more traditional IT operations team&amp;rsquo;s established ways of working. One of common problems faced in adopting infrastructure as code is how to structure the files within a repository in a consistent, intuitive, and scaleable manner.</description>
+    </item>
+    
+    <item>
       <title>Barcamp 2017 Talk - All About DevOps</title>
-      <link>http://joshkodroff.com/post/barcamp-2017-talk/</link>
+      <link>http://joshkodroff.com/post/2017_10_16_barcamp-2017-talk/</link>
       <pubDate>Mon, 16 Oct 2017 17:55:13 -0400</pubDate>
       
-      <guid>http://joshkodroff.com/post/barcamp-2017-talk/</guid>
+      <guid>http://joshkodroff.com/post/2017_10_16_barcamp-2017-talk/</guid>
       <description>Here are the slides from my BarCamp Philly 2017 talk &amp;ldquo;All About DevOps&amp;rdquo;. We got into what the DevOps movement is, what benefits it can bring, and touched on how you might get started at your organization.
  </description>
     </item>
@@ -118,9 +139,8 @@ In the talk I gave, I coined the phrase &amp;ldquo;Bronze Bullet Architecture&am
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>http://joshkodroff.com/about/</guid>
-      <description>My name is Josh Kodroff and I&amp;rsquo;m a technolgy craftsman living in Philadelphia.
-I&amp;rsquo;ve spent most of my career developing enterprise software, and since I have to go to work every day, most of my learning has been focused on making that as painless as possible. Some things that I&amp;rsquo;ve learned about and applied include DevOps, domain-driven design, and message-based architectures like CQRS.
-When I&amp;rsquo;m not working or doing code stuff I enjoy cooking, making music, and hiking in the Wissahickon.</description>
+      <description>My name is Josh Kodroff and I&amp;rsquo;m a technolgy craftsman living in Philadelphia. Craftsmanship, to me, means 3 things:
+ An increased emphasis on quality in order to deliver the best long-term value to stakeholders. Empathy for my teammates, users, and clients. A commitment to continuously improving my skills, both technical and interpersonal.  I spent the first 12 years of my career in software development with an emphasis on message-driven architectures, domain-driven design, continuous integration/delivery, and agile (small &amp;ldquo;a&amp;rdquo;) tools and techniques.</description>
     </item>
     
     <item>

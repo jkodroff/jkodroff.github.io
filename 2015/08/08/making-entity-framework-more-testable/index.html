@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Making Entity Framework More Unit-Testable // Josh Kodroff, Code Craftsman</title>
+    <title>Making Entity Framework More Unit-Testable // Josh Kodroff, Technology Craftsman</title>
 
         <meta charset="utf-8">
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
@@ -16,7 +16,7 @@
     <meta property="og:url" content="http://joshkodroff.com/2015/08/08/making-entity-framework-more-testable/" />
     
 
-    <link href="" rel="alternate" type="application/rss+xml" title="Josh Kodroff, Code Craftsman" />
+    <link href="" rel="alternate" type="application/rss+xml" title="Josh Kodroff, Technology Craftsman" />
     <link rel="shortcut icon" href="/favicon.png">
 
     <link href="http://joshkodroff.com/webfonts/ptserif/main.css" rel='stylesheet' type='text/css'>
@@ -26,7 +26,7 @@
 
     <link href="http://gmpg.org/xfn/11" rel="profile">
     
-    <meta name="generator" content="Hugo 0.29" />
+    <meta name="generator" content="Hugo 0.42.2" />
 </head>
 
 
@@ -36,7 +36,7 @@
     <div id="header-outer" class="outer">
         <div id="header-inner" class="inner">
             <a id="main-nav-toggle" class="nav-icon" href="javascript:;"></a>
-            <a id="logo" class="logo-text" href="http://joshkodroff.com/">Josh Kodroff, Code Craftsman</a>
+            <a id="logo" class="logo-text" href="http://joshkodroff.com/">Josh Kodroff, Technology Craftsman</a>
             <nav id="main-nav">
                 
                 <a class="main-nav-link" href="/about">About</a>
@@ -78,197 +78,187 @@
 <p>We want to depend on interfaces instead of concrete implementations, per the &ldquo;D&rdquo; (<a href="https://en.wikipedia.org/wiki/Dependency_inversion_principle">Dependency Inversion</a>) in <a href="https://en.wikipedia.org/wiki/SOLID_(object-oriented_design)">SOLID</a>.  So how can we do this with Entity Framework?</p>
 
 <p>Let&rsquo;s suppose we have the following <code>DbContext</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">public class MyDbContext : DbContext 
-</span><span style="">{
-</span><span style="">  public DbSet&lt;Order&gt; Orders { get; set; }
-</span><span style="">  // a bunch of other tables...
-</span><span style="">}</span></code></pre>
-</div>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">MyDbContext</span> : DbContext 
+{
+  <span style="color:#66d9ef">public</span> DbSet&lt;Order&gt; Orders { <span style="color:#66d9ef">get</span>; <span style="color:#66d9ef">set</span>; }
+  <span style="color:#75715e">// a bunch of other tables...
+</span><span style="color:#75715e"></span>}</code></pre></div>
 <p>&hellip; we might be consuming it like this:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">var db = new MyDbContext();
-</span><span style="">var order = db.Orders.Single(x =&gt; x.Id == id);</span></code></pre>
-</div>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> db = <span style="color:#66d9ef">new</span> MyDbContext();
+<span style="color:#66d9ef">var</span> order = db.Orders.Single(x =&gt; x.Id == id);</code></pre></div>
 <p>&hellip; so if we naively extract an interface, then it will lead to something like this:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">public interface IMyDbContext
-</span><span style="">{
-</span><span style="">  DbSet&lt;Order&gt; Orders { get; set; }
-</span><span style="">  // a bunch of other tables
-</span><span style="">}</span></code></pre>
-</div>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">interface</span> IMyDbContext
+{
+  DbSet&lt;Order&gt; Orders { <span style="color:#66d9ef">get</span>; <span style="color:#66d9ef">set</span>; }
+  <span style="color:#75715e">// a bunch of other tables
+</span><span style="color:#75715e"></span>}</code></pre></div>
 <p>And that&rsquo;s not so good.</p>
 
 <p>We have to change <code>IMyDbContext</code> along with <code>MyDbContext</code> every time we add a table to the database: We would have to add <code>DbSet&lt;T&gt;</code> properties to both the interface and the implementation.  We also cannot reuse this code across projects because our interface is tightly coupled to the particular database schema we&rsquo;re using.</p>
 
 <p>Fortunately, <code>DbContext</code> exposes a <code>Set&lt;T&gt;()</code> method (<a href="https://msdn.microsoft.com/en-us/library/Gg696521%28v=VS.113%29.aspx">MSDN Docs</a>) which can help us solve this problem.  So, if we change how we consume our <code>DbContext</code> from <code>db.Orders</code> to <code>db.Set&lt;Order&gt;()</code>, we can now define our interface like this:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">public interface IDataSession : IDisposable
-</span><span style="">{
-</span><span style="">  IDbSet&lt;T&gt; Set&lt;T&gt;() where T : class;
-</span><span style="">  
-</span><span style="">  // We also obviously need to persist our changes, so:
-</span><span style="">  void SaveChanges();
-</span><span style="">
-</span><span style="">  // I also have use cases where I need to drop down to raw SQL, so:
-</span><span style="">  int SqlCommand(string sql, params object[] parameters);
-</span><span style="">}</span></code></pre>
-</div>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">interface</span> IDataSession : IDisposable
+{
+  IDbSet&lt;T&gt; Set&lt;T&gt;() <span style="color:#66d9ef">where</span> T : class;
+  
+  <span style="color:#75715e">// We also obviously need to persist our changes, so:
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">void</span> SaveChanges();
+
+  <span style="color:#75715e">// I also have use cases where I need to drop down to raw SQL, so:
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">int</span> SqlCommand(<span style="color:#66d9ef">string</span> sql, <span style="color:#66d9ef">params</span> <span style="color:#66d9ef">object</span><span style="color:#a6e22e">[]</span> parameters);
+}</code></pre></div>
 <p>The name change on the interface from <code>IMyDbContext</code> to <code>IDataSession</code> is intentional: it reflects that this interface is no longer a representation of a <em>particular</em> database context (i.e. <code>MyDbContext</code>), but <em>any</em> database context.  And we can create an implementation for it like so:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">public class EntityDataSession : IDataSession
-</span><span style="">{
-</span><span style="">    // This is the EF class, not ours:
-</span><span style="">    private DbContext _dbContext;
-</span><span style="">
-</span><span style="">    public EntityDataSession(DbContext dbContext)
-</span><span style="">    {
-</span><span style="">        _dbContext = dbContext;
-</span><span style="">    }
-</span><span style="">
-</span><span style="">    public void Dispose()
-</span><span style="">    {
-</span><span style="">        _dbContext.Dispose();
-</span><span style="">    }
-</span><span style="">
-</span><span style="">    public IDbSet&lt;T&gt; Set&lt;T&gt;() where T : class
-</span><span style="">    {
-</span><span style="">        return _dbContext.Set&lt;T&gt;();
-</span><span style="">    }
-</span><span style="">
-</span><span style="">    public void SaveChanges()
-</span><span style="">    {
-</span><span style="">        _dbContext.SaveChanges();
-</span><span style="">    }
-</span><span style="">
-</span><span style="">    public int SqlCommand(string sql, params object[] parameters)
-</span><span style="">    {
-</span><span style="">        return _dbContext.Database.ExecuteSqlCommand(sql, parameters);
-</span><span style="">    }
-</span><span style="">}</span></code></pre>
-</div>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">EntityDataSession</span> : IDataSession
+{
+    <span style="color:#75715e">// This is the EF class, not ours:
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">private</span> DbContext _dbContext;
+
+    <span style="color:#66d9ef">public</span> EntityDataSession(DbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> Dispose()
+    {
+        _dbContext.Dispose();
+    }
+
+    <span style="color:#66d9ef">public</span> IDbSet&lt;T&gt; Set&lt;T&gt;() <span style="color:#66d9ef">where</span> T : <span style="color:#66d9ef">class</span>
+    {
+        <span style="color:#66d9ef">return</span> _dbContext.Set&lt;T&gt;();
+    }
+
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> SaveChanges()
+    {
+        _dbContext.SaveChanges();
+    }
+
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">int</span> SqlCommand(<span style="color:#66d9ef">string</span> sql, <span style="color:#66d9ef">params</span> <span style="color:#66d9ef">object</span><span style="color:#a6e22e">[]</span> parameters)
+    {
+        <span style="color:#66d9ef">return</span> _dbContext.Database.ExecuteSqlCommand(sql, parameters);
+    }
+}</code></pre></div>
 <p>We can use our DI container to give us an <code>EntityDataSession</code> with whatever <code>DbContext</code> we want, and we can reuse this code across projects.  The code below is for <a href="http://docs.structuremap.net/">StructureMap</a>) but your DI container should have similar constructs:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">// Somewhere in your application&#39;s startup code:
-</span><span style="">For&lt;IDataSession&gt;().Use&lt;EntityDataSession&gt;();
-</span><span style="">
-</span><span style="">// Because EntityDataSession takes a DbContext as a constructor param:
-</span><span style="">For&lt;System.Data.Entity.DbContext&gt;().Use&lt;MyDbContext&gt;();</span></code></pre>
-</div>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#75715e">// Somewhere in your application&#39;s startup code:
+</span><span style="color:#75715e"></span>For&lt;IDataSession&gt;().Use&lt;EntityDataSession&gt;();
+
+<span style="color:#75715e">// Because EntityDataSession takes a DbContext as a constructor param:
+</span><span style="color:#75715e"></span>For&lt;System.Data.Entity.DbContext&gt;().Use&lt;MyDbContext&gt;();</code></pre></div>
 <p>And we might consume our code like this.  (Sending your data model directly to a view is not advisable for production-quality code, but this is just an example):</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">public class SomeController : Controller 
-</span><span style="">{
-</span><span style="">    private IDataSession _dataSession;
-</span><span style="">
-</span><span style="">    public SomeController(IDataSession dataSession) {
-</span><span style="">        _dataSession = dataSession
-</span><span style="">    }
-</span><span style="">
-</span><span style="">    public ActionResult Index() {
-</span><span style="">        return View(_dataSession.Set&lt;Orders&gt;())
-</span><span style="">    }
-</span><span style="">}</span></code></pre>
-</div>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">SomeController</span> : Controller 
+{
+    <span style="color:#66d9ef">private</span> IDataSession _dataSession;
+
+    <span style="color:#66d9ef">public</span> SomeController(IDataSession dataSession) {
+        _dataSession = dataSession
+    }
+
+    <span style="color:#66d9ef">public</span> ActionResult Index() {
+        <span style="color:#66d9ef">return</span> View(_dataSession.Set&lt;Orders&gt;())
+    }
+}</code></pre></div>
 <h2 id="part-2-testing">Part 2 - Testing</h2>
 
 <p>We want to be able to write our tests with a minimum of incidental complexity.  In other words, we want to be able to create an in-memory implementation of <code>IDataSession</code>, specifying the tables and entities we need for the test - no more, and no less.  In order to provide a super-simple interface for our tests, we need to hide some complexity within our <code>IDataSession</code> wrapper.</p>
 
 <p>Unfortunately, I was not able to accomplish this succintly without including a mocking library, albeit <a href="http://www.moqthis.com/">a very nicely written one</a>).  Any suggestions for improvement here would be greatly appreciated.  The implementation follows:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">// Only to be included in test assemblies:
-</span><span style="">public static class DataHelper
-</span><span style="">{
-</span><span style="">    public static IDataSession Session()
-</span><span style="">    {
-</span><span style="">        return new MockDataSession();
-</span><span style="">    }
-</span><span style="">
-</span><span style="">    public static IDataSession Session&lt;T&gt;(params T[] set) where T : class
-</span><span style="">    {
-</span><span style="">        return Session().AddSet(set);
-</span><span style="">    }
-</span><span style="">
-</span><span style="">    public static IDataSession AddSet&lt;T&gt;(this IDataSession session, params T[] set) where T : class
-</span><span style="">    {
-</span><span style="">        (session as MockDataSession)
-</span><span style="">            .Mock
-</span><span style="">            .Setup(x =&gt; x.Set&lt;T&gt;())
-</span><span style="">            .Returns(set == null ? new FakeDbSet&lt;T&gt;() : new FakeDbSet&lt;T&gt;(set));
-</span><span style="">
-</span><span style="">        return mockSession;
-</span><span style="">    }
-</span><span style="">
-</span><span style="">    private class MockDataSession : IDataSession
-</span><span style="">    {
-</span><span style="">        private Mock&lt;IDataSession&gt; _mock = new Mock&lt;IDataSession&gt;();
-</span><span style="">
-</span><span style="">        internal Mock&lt;IDataSession&gt; Mock
-</span><span style="">        {
-</span><span style="">            get { return _mock; }
-</span><span style="">        }
-</span><span style="">
-</span><span style="">        public void Dispose() { }
-</span><span style="">
-</span><span style="">        IDbSet&lt;T&gt; IDataSession.Set&lt;T&gt;()
-</span><span style="">        {
-</span><span style="">            return _mock.Object.Set&lt;T&gt;();
-</span><span style="">        }
-</span><span style="">
-</span><span style="">        // This doesn&#39;t seem to be something that&#39;s really testable,
-</span><span style="">        // so we&#39;ll concede this and throw an exception:
-</span><span style="">        public IEnumerable&lt;T&gt; SqlQuery&lt;T&gt;(string sql, params object[] parameters)
-</span><span style="">        {
-</span><span style="">            throw new NotImplementedException();
-</span><span style="">        }
-</span><span style="">
-</span><span style="">        // There&#39;s nothing to &#34;save&#34;, per se so it&#39;s just a NOOP
-</span><span style="">        public void SaveChanges() { }
-</span><span style="">    }
-</span><span style="">}</span></code></pre>
-</div>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#75715e">// Only to be included in test assemblies:
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">DataHelper</span>
+{
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> IDataSession Session()
+    {
+        <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">new</span> MockDataSession();
+    }
+
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> IDataSession Session&lt;T&gt;(<span style="color:#66d9ef">params</span> T<span style="color:#a6e22e">[]</span> <span style="color:#66d9ef">set</span>) <span style="color:#66d9ef">where</span> T : <span style="color:#66d9ef">class</span>
+    {
+        <span style="color:#66d9ef">return</span> Session().AddSet(<span style="color:#66d9ef">set</span>);
+    }
+
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> IDataSession AddSet&lt;T&gt;(<span style="color:#66d9ef">this</span> IDataSession session, <span style="color:#66d9ef">params</span> T<span style="color:#a6e22e">[]</span> <span style="color:#66d9ef">set</span>) <span style="color:#66d9ef">where</span> T : <span style="color:#66d9ef">class</span>
+    {
+        (session <span style="color:#66d9ef">as</span> MockDataSession)
+            .Mock
+            .Setup(x =&gt; x.Set&lt;T&gt;())
+            .Returns(<span style="color:#66d9ef">set</span> == <span style="color:#66d9ef">null</span> ? <span style="color:#66d9ef">new</span> FakeDbSet&lt;T&gt;() : <span style="color:#66d9ef">new</span> FakeDbSet&lt;T&gt;(<span style="color:#66d9ef">set</span>));
+
+        <span style="color:#66d9ef">return</span> mockSession;
+    }
+
+    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">MockDataSession</span> : IDataSession
+    {
+        <span style="color:#66d9ef">private</span> Mock&lt;IDataSession&gt; _mock = <span style="color:#66d9ef">new</span> Mock&lt;IDataSession&gt;();
+
+        <span style="color:#66d9ef">internal</span> Mock&lt;IDataSession&gt; Mock
+        {
+            <span style="color:#66d9ef">get</span> { <span style="color:#66d9ef">return</span> _mock; }
+        }
+
+        <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> Dispose() { }
+
+        IDbSet&lt;T&gt; IDataSession.Set&lt;T&gt;()
+        {
+            <span style="color:#66d9ef">return</span> _mock.Object.Set&lt;T&gt;();
+        }
+
+        <span style="color:#75715e">// This doesn&#39;t seem to be something that&#39;s really testable,
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// so we&#39;ll concede this and throw an exception:
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">public</span> IEnumerable&lt;T&gt; SqlQuery&lt;T&gt;(<span style="color:#66d9ef">string</span> sql, <span style="color:#66d9ef">params</span> <span style="color:#66d9ef">object</span><span style="color:#a6e22e">[]</span> parameters)
+        {
+            <span style="color:#66d9ef">throw</span> <span style="color:#66d9ef">new</span> NotImplementedException();
+        }
+
+        <span style="color:#75715e">// There&#39;s nothing to &#34;save&#34;, per se so it&#39;s just a NOOP
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> SaveChanges() { }
+    }
+}</code></pre></div>
 <h2 id="part-3-putting-it-all-together">Part 3 - Putting it All Together</h2>
 
 <p>Now that we have structured our client code so that it depends on interfaces instead of implementations, and we have an in-memory version of <code>IDataStore</code>, we can create tests that are fast to write, fast to execute, and test the necessary behavior of our program.  Here&rsquo;s an example of how we can do this:</p>
 
 <p>Let&rsquo;s suppose we have a business rule that states &ldquo;customers on credit hold cannot place new orders&rdquo; (because they haven&rsquo;t paid their bills).  That rule might give us a controller that looks like this:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">public class OrdersController : Controller 
-</span><span style="">{
-</span><span style="">    // In a real application, we probably would not have IDataSession 
-</span><span style="">    // as a direct dependency in a controller, but for our purposes 
-</span><span style="">    // this is fine.
-</span><span style="">    private IDataSession _dataSession;
-</span><span style="">
-</span><span style="">    public OrdersController(IDataSession dataSession) {
-</span><span style="">        _dataSession = dataSession;
-</span><span style="">    }
-</span><span style="">
-</span><span style="">    public ActionResult New(Guid customerId) {
-</span><span style="">        if (_dataSession.Set&lt;Customer&gt;().Single(x =&gt; x.Id == customerId).OnCreditHold)
-</span><span style="">            throw new Exception(&#34;Customer is on credit hold and cannot place new orders.&#34;);
-</span><span style="">
-</span><span style="">        return View(new NewOrderViewModel {
-</span><span style="">            CustomerId = customerId;  
-</span><span style="">        });
-</span><span style="">    }
-</span><span style="">}</span></code></pre>
-</div>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">OrdersController</span> : Controller 
+{
+    <span style="color:#75715e">// In a real application, we probably would not have IDataSession 
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// as a direct dependency in a controller, but for our purposes 
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// this is fine.
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">private</span> IDataSession _dataSession;
+
+    <span style="color:#66d9ef">public</span> OrdersController(IDataSession dataSession) {
+        _dataSession = dataSession;
+    }
+
+    <span style="color:#66d9ef">public</span> ActionResult New(Guid customerId) {
+        <span style="color:#66d9ef">if</span> (_dataSession.Set&lt;Customer&gt;().Single(x =&gt; x.Id == customerId).OnCreditHold)
+            <span style="color:#66d9ef">throw</span> <span style="color:#66d9ef">new</span> Exception(<span style="color:#e6db74">&#34;Customer is on credit hold and cannot place new orders.&#34;</span>);
+
+        <span style="color:#66d9ef">return</span> View(<span style="color:#66d9ef">new</span> NewOrderViewModel {
+            CustomerId = customerId;  
+        });
+    }
+}</code></pre></div>
 <p>We can now write a test for this controller like this (the assertion syntax comes from <a href="http://www.fluentassertions.com/">FluentAssertions</a>):</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">[TestFixture]
-</span><span style="">public class OrdersControllerTests
-</span><span style="">{
-</span><span style="">    [Test]
-</span><span style="">    public void New_CustomerOnCreditHold()
-</span><span style="">    {
-</span><span style="">        var customerId = Guid.NewGuid();
-</span><span style="">
-</span><span style="">        var data = DataHelper
-</span><span style="">            .Session(new Customer {
-</span><span style="">                Id = customerId  
-</span><span style="">            });
-</span><span style="">
-</span><span style="">        new OrdersController(data)
-</span><span style="">            .Invoking(x =&gt; x.New(customerId))
-</span><span style="">            .ShouldThrow&lt;Exception&gt;(&#34;*on credit hold*&#34;);
-</span><span style="">            //                      ^^^^^^^^^^^^^^^^^^
-</span><span style="">            // FluentAssertions will accept wildcard characters for
-</span><span style="">            // matching exception text.
-</span><span style="">    }
-</span><span style="">}</span></code></pre>
-</div>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#a6e22e">[TestFixture]</span>
+<span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">OrdersControllerTests</span>
+{<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">    [Test]</span>
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> New_CustomerOnCreditHold()
+    {
+        <span style="color:#66d9ef">var</span> customerId = Guid.NewGuid();
+
+        <span style="color:#66d9ef">var</span> data = DataHelper
+            .Session(<span style="color:#66d9ef">new</span> Customer {
+                Id = customerId  
+            });
+
+        <span style="color:#66d9ef">new</span> OrdersController(data)
+            .Invoking(x =&gt; x.New(customerId))
+            .ShouldThrow&lt;Exception&gt;(<span style="color:#e6db74">&#34;*on credit hold*&#34;</span>);
+            <span style="color:#75715e">//                      ^^^^^^^^^^^^^^^^^^
+</span><span style="color:#75715e"></span>            <span style="color:#75715e">// FluentAssertions will accept wildcard characters for
+</span><span style="color:#75715e"></span>            <span style="color:#75715e">// matching exception text.
+</span><span style="color:#75715e"></span>    }
+}</code></pre></div>
 <p>And that&rsquo;s it!</p>
 
 <h2 id="conclusion">Conclusion</h2>
@@ -317,7 +307,7 @@ Happy coding!</p>
     <footer id="footer">
     <div class="outer">
         <div id="footer-info" class="inner">
-            &copy; 2017 Josh Kodroff, Code Craftsman&nbsp;
+            &copy; 2018 Josh Kodroff, Technology Craftsman&nbsp;
             Powered by <a href="https://gohugo.io" target="_blank">Hugo</a> with theme <a href="https://github.com/carsonip/hugo-theme-minos">Minos</a>
         </div>
     </div>

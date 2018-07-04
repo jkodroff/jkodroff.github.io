@@ -1,0 +1,31 @@
+# GitHub/Atlantis Sequence Diagram
+msc{
+  wordwraparcs=on;
+
+  #act [label="Actor", linecolor="darkgreen", textcolor="white", textbgcolor="darkgreen", arclinecolor="darkgreen", arctextcolor="darkgreen"],
+  #browser [label=":WebBrowser", linecolor="darkgreen", textcolor="white", textbgcolor="darkgreen", arclinecolor="darkgreen", arctextcolor="darkgreen"],
+  #app [label="Application", linecolor="maroon", textcolor="white", textbgcolor="maroon", arclinecolor="maroon", arctextcolor="maroon"],
+  #fbauth [label="Facebook Authorization Server", linecolor="#3a5795", textcolor="white", textbgcolor="#3a5795", arclinecolor="#3a5795", arctextcolor="#3a5795"],
+  #fbcont [label="Facebook Content Server", linecolor="#3a5795", textcolor="white", textbgcolor="#3a5795", arclinecolor="#3a5795", arctextcolor="#3a5795"];
+
+  "Developer1" [linecolor="darkgreen", textcolor="white", textbgcolor="darkgreen", arclinecolor="darkgreen", arctextcolor="darkgreen"], 
+  "GitHub" [linecolor="maroon", textcolor="white", textbgcolor="maroon", arclinecolor="maroon", arctextcolor="maroon"], 
+  "Atlantis" [linecolor="#3a5795", textcolor="white", textbgcolor="#3a5795", arclinecolor="#3a5795", arctextcolor="#3a5795"], 
+  "Developer2" [linecolor="darkgreen", textcolor="white", textbgcolor="darkgreen", arclinecolor="darkgreen", arctextcolor="darkgreen"], 
+  "AWS";
+
+  "Developer1" => "GitHub" [label="git push"];
+  "Developer1" => "GitHub" [label="Create Pull Request"];
+  "Developer1" => "GitHub" [label="Add comment 'atlantis plan' to Pull Request"];
+
+  "GitHub" => "Atlantis" [label="GitHub API hook"];
+  "Atlantis" => "GitHub" [label="git pull"];
+  "Atlantis" => "Atlantis" [label="terraform plan"];
+  "Atlantis" => "GitHub" [label="Add terraform plan output as comment to Pull Request"];
+
+  "Developer2" => "GitHub" [label="Review and appove Pull Request (LGTM!)"];
+  "Developer1" => "GitHub" [label="Add comment 'atlantis apply' to Pull Request"];
+  "GitHub" => "Atlantis" [label="GitHub API hook"];
+  "Atlantis" => "AWS" [label="terraform apply"]; 
+  "Developer1" => "GitHub" [label="Merge Pull Request"]; 
+}

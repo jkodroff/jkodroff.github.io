@@ -1,22 +1,43 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Posts on Josh Kodroff, Code Craftsman</title>
+    <title>Posts on Josh Kodroff, Technology Craftsman</title>
     <link>http://joshkodroff.com/post/</link>
-    <description>Recent content in Posts on Josh Kodroff, Code Craftsman</description>
+    <description>Recent content in Posts on Josh Kodroff, Technology Craftsman</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 16 Oct 2017 17:55:13 -0400</lastBuildDate>
+    <lastBuildDate>Wed, 04 Jul 2018 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="http://joshkodroff.com/post/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
+      <title>CI/CD for Infrastructure as Code with Terraform and Atlantis</title>
+      <link>http://joshkodroff.com/post/2018_07_04_ci_cd_pipeline_terraform_atlantis/</link>
+      <pubDate>Wed, 04 Jul 2018 00:00:00 +0000</pubDate>
+      
+      <guid>http://joshkodroff.com/post/2018_07_04_ci_cd_pipeline_terraform_atlantis/</guid>
+      <description>In this post, we&amp;rsquo;ll go over a complete workflow for continuous integration (CI) and continuous delivery (CD) for infrastructure as code (IaC) with just 2 tools: Terraform, and Atlantis.
+This post originally appeared in the 2nd Watch Company Blog.
+What is Terraform? So what is Terraform? According to the Terraform website:
+ Terraform is a tool for building, changing, and versioning infrastructure safely and efficiently. Terraform can manage existing and popular service providers as well as custom in-house solutions.</description>
+    </item>
+    
+    <item>
+      <title>Terraform Repository Structure</title>
+      <link>http://joshkodroff.com/post/2018_07_04_terraform_repo_structure/</link>
+      <pubDate>Wed, 04 Jul 2018 00:00:00 +0000</pubDate>
+      
+      <guid>http://joshkodroff.com/post/2018_07_04_terraform_repo_structure/</guid>
+      <description>When IT organizations adopt infrastructure as code (IaC), the benefits in productivity, quality, and ability to function at scale are manifold. However, the first few steps on the journey to full automation and immutable infrastructure bliss can be a major disruption to a more traditional IT operations team&amp;rsquo;s established ways of working. One of common problems faced in adopting infrastructure as code is how to structure the files within a repository in a consistent, intuitive, and scaleable manner.</description>
+    </item>
+    
+    <item>
       <title>Barcamp 2017 Talk - All About DevOps</title>
-      <link>http://joshkodroff.com/post/barcamp-2017-talk/</link>
+      <link>http://joshkodroff.com/post/2017_10_16_barcamp-2017-talk/</link>
       <pubDate>Mon, 16 Oct 2017 17:55:13 -0400</pubDate>
       
-      <guid>http://joshkodroff.com/post/barcamp-2017-talk/</guid>
+      <guid>http://joshkodroff.com/post/2017_10_16_barcamp-2017-talk/</guid>
       <description>Here are the slides from my BarCamp Philly 2017 talk &amp;ldquo;All About DevOps&amp;rdquo;. We got into what the DevOps movement is, what benefits it can bring, and touched on how you might get started at your organization.
  </description>
     </item>

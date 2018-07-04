@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>An Elegant Abandoned Cart Email Using NServiceBus // Josh Kodroff, Code Craftsman</title>
+    <title>An Elegant Abandoned Cart Email Using NServiceBus // Josh Kodroff, Technology Craftsman</title>
 
         <meta charset="utf-8">
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
@@ -16,7 +16,7 @@
     <meta property="og:url" content="http://joshkodroff.com/2015/08/21/an-elegant-abandoned-cart-email-using-nservicebus/" />
     
 
-    <link href="" rel="alternate" type="application/rss+xml" title="Josh Kodroff, Code Craftsman" />
+    <link href="" rel="alternate" type="application/rss+xml" title="Josh Kodroff, Technology Craftsman" />
     <link rel="shortcut icon" href="/favicon.png">
 
     <link href="http://joshkodroff.com/webfonts/ptserif/main.css" rel='stylesheet' type='text/css'>
@@ -26,7 +26,7 @@
 
     <link href="http://gmpg.org/xfn/11" rel="profile">
     
-    <meta name="generator" content="Hugo 0.29" />
+    <meta name="generator" content="Hugo 0.42.2" />
 </head>
 
 
@@ -36,7 +36,7 @@
     <div id="header-outer" class="outer">
         <div id="header-inner" class="inner">
             <a id="main-nav-toggle" class="nav-icon" href="javascript:;"></a>
-            <a id="logo" class="logo-text" href="http://joshkodroff.com/">Josh Kodroff, Code Craftsman</a>
+            <a id="logo" class="logo-text" href="http://joshkodroff.com/">Josh Kodroff, Technology Craftsman</a>
             <nav id="main-nav">
                 
                 <a class="main-nav-link" href="/about">About</a>
@@ -80,15 +80,14 @@
 </blockquote>
 
 <p>Many systems will solve this problem using a batch job.  It&rsquo;ll go something like this:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">var abandonedCartThreshold = TimeSpan.FromDays(1);
-</span><span style="">
-</span><span style="">foreach (cart in allCarts) { // a cart disappears when it becomes an order
-</span><span style="">    if (cart.Items.Any(x =&gt; DateTime.UtcNow - x.CreatedOn &lt;= abandonedCartThreshold) {
-</span><span style="">        // fetch customer to whom the cart belongs
-</span><span style="">        // send email
-</span><span style="">    }
-</span><span style="">}</span></code></pre>
-</div>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> abandonedCartThreshold = TimeSpan.FromDays(<span style="color:#ae81ff">1</span>);
+
+<span style="color:#66d9ef">foreach</span> (cart <span style="color:#66d9ef">in</span> allCarts) { <span style="color:#75715e">// a cart disappears when it becomes an order
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (cart.Items.Any(x =&gt; DateTime.UtcNow - x.CreatedOn &lt;= abandonedCartThreshold) {
+        <span style="color:#75715e">// fetch customer to whom the cart belongs
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// send email
+</span><span style="color:#75715e"></span>    }
+}</code></pre></div>
 <p>This might be fine for a simple system with low numbers of customers, but for most real-world systems there&rsquo;s several drawbacks with this approach that we need to consider:</p>
 
 <ol>
@@ -129,19 +128,18 @@
 <p>The first thing we need to do is to create some messages which will be sent by our client application via NServiceBus&rsquo; <code>Bus.Send()</code> method.  This is probably an ASP.NET MVC application, but they could just as easily be sent from a console application, or anywhere really.  If we&rsquo;re following the typical messaging semantics these should be events, but because there&rsquo;s a high likelihood they are sent from a website, we should not use <code>Bus.Publish()</code> (<a href="http://www.make-awesome.com/2010/10/why-not-publish-nservicebus-messages-from-a-web-application/">detailed explanation here</a>).</p>
 
 <p>Here&rsquo;s our messages:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">// When we get one of these, we will reset the countdown to sending the email:
-</span><span style="">public class ItemAddedToCart : IMessage
-</span><span style="">{
-</span><span style="">    public string UserName { get; set; }
-</span><span style="">}
-</span><span style="">
-</span><span style="">// When we get one of these, we will cancel the entire 
-</span><span style="">// process because the the cart is no longer abandoned:
-</span><span style="">public class OrderSubmitted : IMessage
-</span><span style="">{
-</span><span style="">    public string UserName { get; set; }
-</span><span style="">}</span></code></pre>
-</div>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#75715e">// When we get one of these, we will reset the countdown to sending the email:
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">ItemAddedToCart</span> : IMessage
+{
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">string</span> UserName { <span style="color:#66d9ef">get</span>; <span style="color:#66d9ef">set</span>; }
+}
+
+<span style="color:#75715e">// When we get one of these, we will cancel the entire 
+</span><span style="color:#75715e">// process because the the cart is no longer abandoned:
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">OrderSubmitted</span> : IMessage
+{
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">string</span> UserName { <span style="color:#66d9ef">get</span>; <span style="color:#66d9ef">set</span>; }
+}</code></pre></div>
 <p>Now we&rsquo;re ready to create our saga.  When we create a saga in NServiceBus, we need to define 2 things:</p>
 
 <ol>
@@ -150,42 +148,39 @@
 </ol>
 
 <p>Let&rsquo;s do that now:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">public class AbandonedCartSagaData : IContainSagaData
-</span><span style="">{
-</span><span style="">    // Built-in saga properties:
-</span><span style="">    public Guid Id { get; set; }
-</span><span style="">    public string Originator { get; set; }
-</span><span style="">    public string OriginalMessageId { get; set; }
-</span><span style="">}
-</span><span style="">
-</span><span style="">public class AbandonedCartSaga : 
-</span><span style="">  Saga&lt;AbandonedCartSagaData&gt;,
-</span><span style="">  IAmStartedByMessages&lt;ItemAddedToCart&gt;
-</span><span style="">{
-</span><span style="">    public void Handle(ItemAddedToCart message) { }
-</span><span style="">}</span></code></pre>
-</div>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">AbandonedCartSagaData</span> : IContainSagaData
+{
+    <span style="color:#75715e">// Built-in saga properties:
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">public</span> Guid Id { <span style="color:#66d9ef">get</span>; <span style="color:#66d9ef">set</span>; }
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">string</span> Originator { <span style="color:#66d9ef">get</span>; <span style="color:#66d9ef">set</span>; }
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">string</span> OriginalMessageId { <span style="color:#66d9ef">get</span>; <span style="color:#66d9ef">set</span>; }
+}
+
+<span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">AbandonedCartSaga</span> : 
+  Saga&lt;AbandonedCartSagaData&gt;,
+  IAmStartedByMessages&lt;ItemAddedToCart&gt;
+{
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> Handle(ItemAddedToCart message) { }
+}</code></pre></div>
 <p>We need to tell NServiceBus how to get from an incoming message to the right saga (one saga per customer, keyed off the username).</p>
 
 <p>Add this to <code>AbandonedCartSagaData</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">// This needs to be unique so that we can scale out, or 
-</span><span style="">// we might get 2 Sagas with the same username, 
-</span><span style="">// per https://twitter.com/UdiDahan/status/587896128688951297
-</span><span style="">[Unique]
-</span><span style="">public string UserName { get; set; }</span></code></pre>
-</div>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#75715e">// This needs to be unique so that we can scale out, or 
+</span><span style="color:#75715e">// we might get 2 Sagas with the same username, 
+</span><span style="color:#75715e">// per https://twitter.com/UdiDahan/status/587896128688951297
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">[Unique]</span>
+<span style="color:#66d9ef">public</span> <span style="color:#66d9ef">string</span> UserName { <span style="color:#66d9ef">get</span>; <span style="color:#66d9ef">set</span>; }</code></pre></div>
 <p>And add this to <code>AbandonedCartSaga</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">protected override void ConfigureHowToFindSaga(SagaPropertyMapper&lt;AbandonedCartSagaData&gt; mapper)
-</span><span style="">{
-</span><span style="">    mapper
-</span><span style="">        .ConfigureMapping&lt;ItemAddedToCart&gt;(x =&gt; x.UserName)
-</span><span style="">        .ToSaga(x =&gt; x.UserName);
-</span><span style="">
-</span><span style="">    mapper
-</span><span style="">        .ConfigureMapping&lt;OrderSubmitted&gt;(x =&gt; x.UserName)
-</span><span style="">        .ToSaga(x =&gt; x.UserName);
-</span><span style="">}</span></code></pre>
-</div>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">protected</span> <span style="color:#66d9ef">override</span> <span style="color:#66d9ef">void</span> ConfigureHowToFindSaga(SagaPropertyMapper&lt;AbandonedCartSagaData&gt; mapper)
+{
+    mapper
+        .ConfigureMapping&lt;ItemAddedToCart&gt;(x =&gt; x.UserName)
+        .ToSaga(x =&gt; x.UserName);
+
+    mapper
+        .ConfigureMapping&lt;OrderSubmitted&gt;(x =&gt; x.UserName)
+        .ToSaga(x =&gt; x.UserName);
+}</code></pre></div>
 <h2 id="creating-our-nservicebus-saga-business-logic">Creating our NServiceBus Saga: Business Logic</h2>
 
 <p>First we need to understand <a href="http://docs.particular.net/nservicebus/sagas/timeouts">timeouts in NServiceBus sagas</a>.  A timeout message is like a programmable boomerang: the saga sends the timeout message (which can contain whatever additional data you want), and it&rsquo;ll &ldquo;come back&rdquo; to the saga in whatever <code>TimeSpan</code> you specify when you call <code>RequestTimeout()</code> from within the saga.</p>
@@ -199,51 +194,48 @@
 </ol>
 
 <p>Let&rsquo;s do that now.  First, we&rsquo;ll need to create our timeout message.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">public class AbandonedCartTimeOut : IMessage
-</span><span style="">{
-</span><span style="">  public Guid Id { get; set; }
-</span><span style="">}</span></code></pre>
-</div>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">AbandonedCartTimeOut</span> : IMessage
+{
+  <span style="color:#66d9ef">public</span> Guid Id { <span style="color:#66d9ef">get</span>; <span style="color:#66d9ef">set</span>; }
+}</code></pre></div>
 <p>Add this to <code>AbandonedCartEmailSagaData</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">public Guid LastTimeOutId { get; set; }</span></code></pre>
-</div>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">public</span> Guid LastTimeOutId { <span style="color:#66d9ef">get</span>; <span style="color:#66d9ef">set</span>; }</code></pre></div>
 <p>Add this to <code>AbandonedCartEmailSaga</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">public void Handle(ItemAddedToCart message)
-</span><span style="">{
-</span><span style="">    Data.UserName = message.UserName;
-</span><span style="">    Data.LastTimeOutId = Guid.NewGuid();
-</span><span style="">
-</span><span style="">
-</span><span style="">    RequestTimeout(
-</span><span style="">        // We&#39;re using 5 seconds because it makes it easy to test,
-</span><span style="">        // but in a real system, we might want to provide this via
-</span><span style="">        // a configurable variable.
-</span><span style="">        TimeSpan.FromSeconds(5), 
-</span><span style="">        new AbandonedCartTimeout {
-</span><span style="">            Id = Data.LastTimeOutId
-</span><span style="">        }
-</span><span style="">    );
-</span><span style="">}
-</span><span style="">
-</span><span style="">public void Handle(OrderSubmitted message)
-</span><span style="">{
-</span><span style="">    MarkAsComplete();
-</span><span style="">}
-</span><span style="">
-</span><span style="">public void Timeout(AbandonedCartTimeout state)
-</span><span style="">{
-</span><span style="">    if (Data.LastTimeOutId != state.Id) {
-</span><span style="">        // This is not the last timeout issued, so ignore it.
-</span><span style="">        return;
-</span><span style="">      }
-</span><span style="">
-</span><span style="">    Bus.SendLocal(new SendAbandonedCartEmail {
-</span><span style="">        UserName = Data.UserName
-</span><span style="">    });
-</span><span style="">
-</span><span style="">    MarkAsComplete();
-</span><span style="">}</span></code></pre>
-</div>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> Handle(ItemAddedToCart message)
+{
+    Data.UserName = message.UserName;
+    Data.LastTimeOutId = Guid.NewGuid();
+
+
+    RequestTimeout(
+        <span style="color:#75715e">// We&#39;re using 5 seconds because it makes it easy to test,
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// but in a real system, we might want to provide this via
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// a configurable variable.
+</span><span style="color:#75715e"></span>        TimeSpan.FromSeconds(<span style="color:#ae81ff">5</span>), 
+        <span style="color:#66d9ef">new</span> AbandonedCartTimeout {
+            Id = Data.LastTimeOutId
+        }
+    );
+}
+
+<span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> Handle(OrderSubmitted message)
+{
+    MarkAsComplete();
+}
+
+<span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> Timeout(AbandonedCartTimeout state)
+{
+    <span style="color:#66d9ef">if</span> (Data.LastTimeOutId != state.Id) {
+        <span style="color:#75715e">// This is not the last timeout issued, so ignore it.
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">return</span>;
+      }
+
+    Bus.SendLocal(<span style="color:#66d9ef">new</span> SendAbandonedCartEmail {
+        UserName = Data.UserName
+    });
+
+    MarkAsComplete();
+}</code></pre></div>
 <h2 id="how-to-test-our-nservicebus-saga">How to Test Our NServiceBus Saga</h2>
 
 <p>There&rsquo;s 2 philosophies when it comes to testing NServiceBus sagas:</p>
@@ -263,85 +255,83 @@
 <h2 id="actually-testing-our-nservicebus-saga">Actually Testing Our NServiceBus Saga</h2>
 
 <p>We have 2 distinct scenarios.  First, let&rsquo;s do the &ldquo;happy path&rdquo; (from the view of an eCommerce retailer) where the order gets placed.  (The assertion methods pictured below are done with <a href="http://www.fluentassertions.com/">FluentAssertions</a>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">[Test]
-</span><span style="">public void OrderSubmitted()
-</span><span style="">{
-</span><span style="">    var userName = &#34;sales@joshkodroff.com&#34;;
-</span><span style="">    var timeoutId1 = Guid.Empty;
-</span><span style="">
-</span><span style="">    Test
-</span><span style="">        .Saga&lt;AbandonedCartSaga&gt;()
-</span><span style="">        .ExpectTimeoutToBeSetIn&lt;AbandonedCartTimeout&gt;((msg, span) =&gt; {
-</span><span style="">            timeoutId1 = msg.Id;
-</span><span style="">            span.Should().Be(TimeSpan.FromSeconds(5));
-</span><span style="">        })
-</span><span style="">        .When(saga =&gt; saga.Handle(new ItemAddedToCart {
-</span><span style="">            UserName = userName
-</span><span style="">        }))
-</span><span style="">        .ExpectTimeoutToBeSetIn&lt;AbandonedCartTimeout&gt;((msg, span) =&gt; {
-</span><span style="">            // just to make sure we&#39;re generating new ids
-</span><span style="">            msg.Id.Should().NotBe(timeoutId1); 
-</span><span style="">            
-</span><span style="">            span.Should().Be(TimeSpan.FromSeconds(5));
-</span><span style="">        })
-</span><span style="">        .When(saga =&gt; saga.Handle(new ItemAddedToCart {
-</span><span style="">            UserName = userName
-</span><span style="">        }))
-</span><span style="">        // just a dummy check.  no message should be sent
-</span><span style="">        .ExpectNotSend&lt;SendAbandonedCartEmail&gt;(x =&gt; x != null) 
-</span><span style="">        .When(saga =&gt; {
-</span><span style="">            // the first timeout comes back (which should be ignored):
-</span><span style="">            saga.Timeout(new AbandonedCartTimeout {
-</span><span style="">                Id = timeoutId1
-</span><span style="">            });
-</span><span style="">
-</span><span style="">            saga.Handle(new OrderSubmitted {
-</span><span style="">                UserName = userName
-</span><span style="">            });
-</span><span style="">        })
-</span><span style="">        .AssertSagaCompletionIs(true);
-</span><span style="">}</span></code></pre>
-</div>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#a6e22e">[Test]</span>
+<span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> OrderSubmitted()
+{
+    <span style="color:#66d9ef">var</span> userName = <span style="color:#e6db74">&#34;sales@joshkodroff.com&#34;</span>;
+    <span style="color:#66d9ef">var</span> timeoutId1 = Guid.Empty;
+
+    Test
+        .Saga&lt;AbandonedCartSaga&gt;()
+        .ExpectTimeoutToBeSetIn&lt;AbandonedCartTimeout&gt;((msg, span) =&gt; {
+            timeoutId1 = msg.Id;
+            span.Should().Be(TimeSpan.FromSeconds(<span style="color:#ae81ff">5</span>));
+        })
+        .When(saga =&gt; saga.Handle(<span style="color:#66d9ef">new</span> ItemAddedToCart {
+            UserName = userName
+        }))
+        .ExpectTimeoutToBeSetIn&lt;AbandonedCartTimeout&gt;((msg, span) =&gt; {
+            <span style="color:#75715e">// just to make sure we&#39;re generating new ids
+</span><span style="color:#75715e"></span>            msg.Id.Should().NotBe(timeoutId1); 
+            
+            span.Should().Be(TimeSpan.FromSeconds(<span style="color:#ae81ff">5</span>));
+        })
+        .When(saga =&gt; saga.Handle(<span style="color:#66d9ef">new</span> ItemAddedToCart {
+            UserName = userName
+        }))
+        <span style="color:#75715e">// just a dummy check.  no message should be sent
+</span><span style="color:#75715e"></span>        .ExpectNotSend&lt;SendAbandonedCartEmail&gt;(x =&gt; x != <span style="color:#66d9ef">null</span>) 
+        .When(saga =&gt; {
+            <span style="color:#75715e">// the first timeout comes back (which should be ignored):
+</span><span style="color:#75715e"></span>            saga.Timeout(<span style="color:#66d9ef">new</span> AbandonedCartTimeout {
+                Id = timeoutId1
+            });
+
+            saga.Handle(<span style="color:#66d9ef">new</span> OrderSubmitted {
+                UserName = userName
+            });
+        })
+        .AssertSagaCompletionIs(<span style="color:#66d9ef">true</span>);
+}</code></pre></div>
 <p>And now we have the &ldquo;less happy&rdquo; path where the followup email needs to be sent:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="">[Test]
-</span><span style="">public void OrderNotSubmitted()
-</span><span style="">{
-</span><span style="">    var userName = &#34;sales@joshkodroff.com&#34;;
-</span><span style="">    var timeoutId1 = Guid.Empty;
-</span><span style="">    var timeoutId2 = Guid.Empty;
-</span><span style="">
-</span><span style="">    Test
-</span><span style="">        .Saga&lt;AbandonedCartSaga&gt;()
-</span><span style="">        .ExpectTimeoutToBeSetIn&lt;AbandonedCartTimeout&gt;((msg, span) =&gt; {
-</span><span style="">            timeoutId1 = msg.Id;
-</span><span style="">            span.Should().Be(TimeSpan.FromSeconds(5));
-</span><span style="">        })
-</span><span style="">        .When(saga =&gt; saga.Handle(new ItemAddedToCart {
-</span><span style="">            UserName = userName
-</span><span style="">        }))
-</span><span style="">        .ExpectTimeoutToBeSetIn&lt;AbandonedCartTimeout&gt;((msg, span) =&gt; {
-</span><span style="">            timeoutId2 = msg.Id;
-</span><span style="">            span.Should().Be(TimeSpan.FromSeconds(5));
-</span><span style="">        })
-</span><span style="">        .When(saga =&gt; {
-</span><span style="">            saga.Handle(new ItemAddedToCart {
-</span><span style="">                UserName = userName
-</span><span style="">            });
-</span><span style="">
-</span><span style="">            // the first timeout comes back (which should be ignored):
-</span><span style="">            saga.Timeout(new AbandonedCartTimeout {
-</span><span style="">                Id = timeoutId1
-</span><span style="">            });
-</span><span style="">        })
-</span><span style="">        .ExpectSendLocal&lt;SendAbandonedCartEmail&gt;(msg =&gt; {
-</span><span style="">            msg.UserName.Should().Be(userName);
-</span><span style="">        })
-</span><span style="">        .When(saga =&gt; saga.Timeout(new AbandonedCartTimeout {
-</span><span style="">            Id = timeoutId2
-</span><span style="">        }))
-</span><span style="">        .AssertSagaCompletionIs(true);
-</span><span style="">}</span></code></pre>
-</div>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#a6e22e">[Test]</span>
+<span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> OrderNotSubmitted()
+{
+    <span style="color:#66d9ef">var</span> userName = <span style="color:#e6db74">&#34;sales@joshkodroff.com&#34;</span>;
+    <span style="color:#66d9ef">var</span> timeoutId1 = Guid.Empty;
+    <span style="color:#66d9ef">var</span> timeoutId2 = Guid.Empty;
+
+    Test
+        .Saga&lt;AbandonedCartSaga&gt;()
+        .ExpectTimeoutToBeSetIn&lt;AbandonedCartTimeout&gt;((msg, span) =&gt; {
+            timeoutId1 = msg.Id;
+            span.Should().Be(TimeSpan.FromSeconds(<span style="color:#ae81ff">5</span>));
+        })
+        .When(saga =&gt; saga.Handle(<span style="color:#66d9ef">new</span> ItemAddedToCart {
+            UserName = userName
+        }))
+        .ExpectTimeoutToBeSetIn&lt;AbandonedCartTimeout&gt;((msg, span) =&gt; {
+            timeoutId2 = msg.Id;
+            span.Should().Be(TimeSpan.FromSeconds(<span style="color:#ae81ff">5</span>));
+        })
+        .When(saga =&gt; {
+            saga.Handle(<span style="color:#66d9ef">new</span> ItemAddedToCart {
+                UserName = userName
+            });
+
+            <span style="color:#75715e">// the first timeout comes back (which should be ignored):
+</span><span style="color:#75715e"></span>            saga.Timeout(<span style="color:#66d9ef">new</span> AbandonedCartTimeout {
+                Id = timeoutId1
+            });
+        })
+        .ExpectSendLocal&lt;SendAbandonedCartEmail&gt;(msg =&gt; {
+            msg.UserName.Should().Be(userName);
+        })
+        .When(saga =&gt; saga.Timeout(<span style="color:#66d9ef">new</span> AbandonedCartTimeout {
+            Id = timeoutId2
+        }))
+        .AssertSagaCompletionIs(<span style="color:#66d9ef">true</span>);
+}</code></pre></div>
 <h2 id="possible-future-enhancements-and-conclusion">Possible Future Enhancements and Conclusion</h2>
 
 <p>What if we need to account for a new <code>ItemRemovedFromCart</code> message?  We&rsquo;d need to include the total number of items in the cart with the <code>ItemRemovedFromCart</code> message, and after that it&rsquo;s pretty simple: If <code>ItemRemovedFromCart.NumberOfCartItems</code> is zero, complete the saga because there&rsquo;s no items left in the cart.  If it&rsquo;s non-zero, then the handler has the same logic as <code>ItemAddedToCart</code>.  For testing, we&rsquo;ll need to add in a few of these messages to our happy path, then add in an additional test fixture or two that aseserts that the saga completes when there&rsquo;s no items left in the cart.)</p>
@@ -389,7 +379,7 @@
     <footer id="footer">
     <div class="outer">
         <div id="footer-info" class="inner">
-            &copy; 2017 Josh Kodroff, Code Craftsman&nbsp;
+            &copy; 2018 Josh Kodroff, Technology Craftsman&nbsp;
             Powered by <a href="https://gohugo.io" target="_blank">Hugo</a> with theme <a href="https://github.com/carsonip/hugo-theme-minos">Minos</a>
         </div>
     </div>

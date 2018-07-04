@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Terraform Repository Structure // Josh Kodroff, Technology Craftsman</title>
+
+        <meta charset="utf-8">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    <meta name="description" content="">
+    <meta name="keywords" content="">
+    <meta name="author" content="">
+        <meta property="og:title" content="Terraform Repository Structure" />
+    <meta property="og:description" content="" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:url" content="http://joshkodroff.com/post/2018_07_04_terraform_repo_structure/" />
+    
+
+    <link href="" rel="alternate" type="application/rss+xml" title="Josh Kodroff, Technology Craftsman" />
+    <link rel="shortcut icon" href="/favicon.png">
+
+    <link href="http://joshkodroff.com/webfonts/ptserif/main.css" rel='stylesheet' type='text/css'>
+    <link href="http://joshkodroff.com/webfonts/source-code-pro/main.css" rel="stylesheet" type="text/css">
+
+    <link rel="stylesheet" href="http://joshkodroff.com/css/style.css">
+
+    <link href="http://gmpg.org/xfn/11" rel="profile">
+    
+    <meta name="generator" content="Hugo 0.42.2" />
+</head>
+
+
+<body>
+<div id="container">
+    <header id="header">
+    <div id="header-outer" class="outer">
+        <div id="header-inner" class="inner">
+            <a id="main-nav-toggle" class="nav-icon" href="javascript:;"></a>
+            <a id="logo" class="logo-text" href="http://joshkodroff.com/">Josh Kodroff, Technology Craftsman</a>
+            <nav id="main-nav">
+                
+                <a class="main-nav-link" href="/about">About</a>
+                
+                <a class="main-nav-link" href="/contact">Contact</a>
+                
+            </nav>
+            <nav id="sub-nav">
+                <div id="search-form-wrap">
+                </div>
+            </nav>
+        </div>
+    </div>
+</header>
+    <section id="main" class="outer">
+        <article class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        <header class="article-header">
+            <h1 class="article-title" itemprop="name">Terraform Repository Structure</h1>
+        </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+            
+
+<p>When IT organizations adopt infrastructure as code (IaC), the benefits in productivity, quality, and ability to function at scale are manifold.  However, the first few steps on the journey to full automation and immutable infrastructure bliss can be a major disruption to a more traditional IT operations team&rsquo;s established ways of working.  One of common problems faced in adopting infrastructure as code is how to structure the files within a repository in a consistent, intuitive, and scaleable manner.  Even IT operations teams whose members have development skills will still face this anxiety-inducing challenge simply because adopting IaC involves new tools whose conventions differ somewhat from more familiar languages and frameworks.</p>
+
+<p>In this blog post, we&rsquo;ll go over how we structure our IaC repositories at 2nd Watch with a particular focus on <a href="https://www.terraform.io/">Terraform</a>, an open-source tool by <a href="https://www.hashicorp.com/">Hashicorp</a> for provisioning infrastructure across multiple cloud providers with a single interface.</p>
+
+<h2 id="first-things-first-readme-md-and-gitignore">First Things First: README.md and .gitignore</h2>
+
+<p>The task in any new repository is to create a README file.  Many git repositories (especially on Github) have adopted <a href="https://www.markdownguide.org/">Markdown</a> as a de facto standard format for README files.  A good README file will include the following information:</p>
+
+<ol>
+<li><strong>Overview:</strong> A brief description of the infrastructure the repo builds.  A high-level diagram is often an effective method of expressing this information.  2nd Watch uses <a href="https://www.lucidchart.com/">LucidChart</a> for general diagrams (exported to PNG or a similar format) and <a href="https://mscgen.js.org/">mscgen_js</a> for sequence diagrams.</li>
+<li><strong>Pre-requisites:</strong> Installation instructions (or links thereto) any software that must be installed before building or changing the code.</li>
+<li><strong>Building The Code:</strong> What commands to run in order to build the infrastructure and/or run the tests when applicable.  2nd Watch uses <a href="https://www.gnu.org/software/make/">Make</a> in order to provide a single tool with a consistent interface to build all codebases, regardless of language or toolset.  If using Make in Windows environments, <a href="https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux">Windows Subsystem for Linux</a> or is recommended for Windows 10 in order to avoid having to write 2 sets of commands in Makefiles: Bash, and PowerShell.</li>
+</ol>
+
+<p>It&rsquo;s important that you do not neglect this basic documentation for 2 reasons (even if you think you&rsquo;re the only one who will work on the codebase):</p>
+
+<ol>
+<li>The obvious: Writing this critical information down in an easily viewable place makes it easier for other members of your organization to onboard onto your project and will prevent the need for a panicked knowledge transfer when projects change hands.</li>
+<li>The not-so-obvious: The <em>act</em> of writing a description of the design clarifies your intent <em>to yourself</em> and will result in a cleaner design and a more coherent repository.</li>
+</ol>
+
+<p>All repositories should also include a <code>.gitignore</code> file with the appropriate settings for Terraform.  <a href="https://github.com/github/gitignore/blob/master/Terraform.gitignore">GitHub&rsquo;s default Terraform .gitignore</a> is a decent starting point, but in most cases you will not want to ignore <code>.tfvars</code> files because they often contain environment-specific parameters that allow for greater code reuse as we will see later.</p>
+
+<h3 id="terraform-roots-and-multiple-environments">Terraform Roots and Multiple Environments</h3>
+
+<p>A Terraform root is the unit of work for a single <code>terraform apply</code> command.  We group our infrastructure into multiple terraform roots in order to limit our &ldquo;blast radius&rdquo; (the amount of damage a single errant <code>terraform apply</code> can cause).</p>
+
+<ul>
+<li>Repositories with multiple roots should contain a <code>roots/</code> directory with a subdirectory for each root (e.g. VPC, one per-application) <code>main.tf</code> file as the primary entry point.</li>
+<li>Note that the <code>roots/</code> directory is optional for repositories that only contain a single root, e.g. infrastructure for an application team which includes only a few resources which should be deployed in concert.  In this case, <code>modules/</code> may be placed in the same directory as <code>main.tf</code>.</li>
+<li>Roots which are deployed into multiple environments should include an <code>env/</code> subdirectory at the same level as <code>main.tf</code>.  Each environment corresponds to a <code>tfvars</code> file under <code>env/</code> named after the environment, e.g. <code>staging.tfvars</code>.  Each <code>.tfvars</code> file contains parameters appropriate for each environment, e.g. EC2 instance sizes.</li>
+</ul>
+
+<p>Here&rsquo;s what our <code>roots</code> directory might look like for a sample with a VPC and 2 application stacks, and 3 environments (QA, Staging, and Production):</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">.
+└── roots
+    ├── application1
+    │   ├── env
+    │   │   ├── production.tfvars
+    │   │   ├── qa.tfvars
+    │   │   └── staging.tfvars
+    │   └── main.tf
+    ├── application2
+    │   ├── env
+    │   │   ├── production.tfvars
+    │   │   ├── qa.tfvars
+    │   │   └── staging.tfvars
+    │   └── main.tf
+    └── vpc
+        ├── env
+        │   ├── production.tfvars
+        │   ├── qa.tfvars
+        │   └── staging.tfvars
+        └── main.tf</code></pre></div>
+<h3 id="terraform-modules">Terraform modules</h3>
+
+<p>Terraform modules are self-contained packages of Terraform configurations that are managed as a group. Modules are used to create reusable components, improve organization, and to treat pieces of infrastructure as a black box.  In short, they are the Terraform equivalent of functions or reusable code libraries.</p>
+
+<p>Terraform modules come in 2 flavors:</p>
+
+<ol>
+<li>Internal modules, whose source code is consumed by roots that live in the same repository as the module.</li>
+<li>External modules, whose source code is consumed by roots in multiple repositories.  The source code for external modules lives in its own repository, separate from any consumers and separate from other modules to ensure we can version the module correctly.</li>
+</ol>
+
+<p>In this post, we&rsquo;ll only be covering internal modules.</p>
+
+<ul>
+<li>Each internal module should be placed within a subdirectory under <code>modules/</code>.</li>
+<li>Module subdirectories/repositories should follow the standard module structure per <a href="https://www.terraform.io/docs/modules/create.html#standard-module-structure">the Terraform docs</a>.</li>
+<li>External modules should always be <a href="https://www.terraform.io/docs/modules/sources.html#ref">pinned at a version</a>: a git revision or a version number.  This practice allows for reliable and repeatable builds.  Failing to pin module versions may cause a module to be updated between builds by breaking the build without any obvious changes in our code. Even worse, failing to pin our module versions might cause an plan to be generated with changes we did not anticipate.</li>
+</ul>
+
+<p>Here&rsquo;s what our <code>modules</code> directory might look like:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">.
+└── modules
+    ├── ec2
+    │   ├── main.tf
+    │   ├── outputs.tf
+    │   └── variables.tf
+    └── vpc
+        ├── main.tf
+        ├── modules
+        │   ├── routing.tf
+        │   └── subnets.tf
+        ├── outputs.tf
+        └── variables.tf</code></pre></div>
+<h3 id="terraform-and-other-tools">Terraform and Other Tools</h3>
+
+<p>Terraform is often used in alongside other automation tools within the same repository.  Some frequent collaborators include <a href="https://www.ansible.com/">Ansible</a> for configuration management and <a href="https://www.packer.io/">Packer</a> for compiling identical machine images across multiple virtualization platforms or cloud providers.  When using Terraform in conjunction with other tools within the same repo, 2nd Watch creates a directory per tool from the root of the repo:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sample-repo
+├── README.md
+├── .gitignore
+├── ansible
+├── packer
+└── terraform
+    ├── modules
+    └── roots</code></pre></div>
+<h3 id="putting-it-all-together">Putting it all together</h3>
+
+<p>The following sample illustrates a sample Terraform repository structure with all of the concepts outlined above:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ tree sample-repo/terraform
+
+terraform
+├── GNUmakefile
+├── README.md
+├── modules
+│   ├── ec2
+│   │   ├── main.tf
+│   │   ├── outputs.tf
+│   │   └── variables.tf
+│   └── vpc
+│       ├── main.tf
+│       ├── modules
+│       │   ├── routing.tf
+│       │   └── subnets.tf
+│       ├── outputs.tf
+│       └── variables.tf
+└── roots
+    ├── application1
+    │   ├── env
+    │   │   ├── production.tfvars
+    │   │   ├── qa.tfvars
+    │   │   └── staging.tfvars
+    │   └── main.tf
+    ├── application2
+    │   ├── env
+    │   │   ├── production.tfvars
+    │   │   ├── qa.tfvars
+    │   │   └── staging.tfvars
+    │   └── main.tf
+    └── vpc
+        ├── env
+        │   ├── production.tfvars
+        │   ├── qa.tfvars
+        │   └── staging.tfvars
+        └── main.tf</code></pre></div>
+<h2 id="conclusion">Conclusion</h2>
+
+<p>There&rsquo;s no single repository format that&rsquo;s optimal, but we&rsquo;ve found that this standard works for the majority of our use cases in our extensive use of Terraform on dozens of projects.  That said, if you find a tweak that works better for your organization - go for it!  The structure described in this post will give you a solid and battle-tested starting point to keep your Terraform code organized so your team can stay productive!</p>
+
+<h2 id="additional-resources">Additional resources</h2>
+
+<ul>
+<li><a href="https://terraformbook.com/">The Terraform Book</a> by James Turnbull provides an excellent introduction to Terraform all the way through repository structure and collaboration techniques.</li>
+<li>The <a href="https://github.com/terraform-aws-modules/terraform-aws-vpc">Hashicorp AWS VPC Module</a> is one of the most popular modules in the <a href="https://registry.terraform.io/">Terraform Registry</a> and is an excellent example of a well-written Terraform module.</li>
+<li>The <a href="https://github.com/jen20/hashidays-nyc">source code</a> for James Nugent’s <a href="https://www.youtube.com/watch?v=8ZRa0lLq8OU">Hashidays NYC 2017 talk</a> code is an exemplary Terraform repository.  Although it&rsquo;s based on an older version of Terraform (before providers were broken out from the main Terraform executable), the code structure, formatting, and use of Makefiles is still current.</li>
+</ul>
+
+        </div>
+
+        
+        
+        <div class="article-toc" >
+            <h3>Contents</h3>
+            <nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li><a href="#first-things-first-readme-md-and-gitignore">First Things First: README.md and .gitignore</a>
+<ul>
+<li><a href="#terraform-roots-and-multiple-environments">Terraform Roots and Multiple Environments</a></li>
+<li><a href="#terraform-modules">Terraform modules</a></li>
+<li><a href="#terraform-and-other-tools">Terraform and Other Tools</a></li>
+<li><a href="#putting-it-all-together">Putting it all together</a></li>
+</ul></li>
+<li><a href="#conclusion">Conclusion</a></li>
+<li><a href="#additional-resources">Additional resources</a></li>
+</ul></li>
+</ul>
+</nav>
+        </div>
+        
+        
+
+        
+
+
+        
+    </div>
+</article>
+
+        
+    </section>
+    <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2018 Josh Kodroff, Technology Craftsman&nbsp;
+            Powered by <a href="https://gohugo.io" target="_blank">Hugo</a> with theme <a href="https://github.com/carsonip/hugo-theme-minos">Minos</a>
+        </div>
+    </div>
+    
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/tomorrow-night.min.css" integrity="sha256-2wL88NKUqvJi/ExflDzkzUumjUM73mcK2gBvBBeLvTk=" crossorigin="anonymous" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js" integrity="sha256-KbfTjB0WZ8vvXngdpJGY3Yp3xKk+tttbqClO11anCIU=" crossorigin="anonymous"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+
+    
+    <script>
+        document.getElementById('main-nav-toggle').addEventListener('click', function () {
+            var header = document.getElementById('header');
+            if (header.classList.contains('mobile-on')) {
+                header.classList.remove('mobile-on');
+            } else {
+                header.classList.add('mobile-on');
+            }
+        });
+    </script>
+</footer>
+</div>
+</body>
+</html>

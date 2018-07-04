@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Golang on Josh Kodroff, Technology Craftsman</title>
+    <link>http://joshkodroff.com/categories/golang/</link>
+    <description>Recent content in Golang on Josh Kodroff, Technology Craftsman</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    
+	<atom:link href="http://joshkodroff.com/categories/golang/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title></title>
+      <link>http://joshkodroff.com/post/2018_07_04_terraform_repo_structure/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://joshkodroff.com/post/2018_07_04_terraform_repo_structure/</guid>
+      <description>Terraform Repository Structure When IT organizations adopt infrastructure as code (IaC), the benefits in productivity, quality, and ability to function at scale are manifold. However, the first few steps on the journey to full automation and immutable infrastructure bliss can be a major disruption to a more traditional IT operations team&amp;rsquo;s established ways of working. One of common problems faced in adopting infrastructure as code is how to structure the files within a repository in a consistent, intuitive, and scaleable manner.</description>
+    </item>
+    
+  </channel>
+</rss>
