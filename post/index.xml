@@ -2,21 +2,21 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Posts on Josh Kodroff, Technology Craftsman</title>
-    <link>http://joshkodroff.com/post/</link>
+    <link>https://joshkodroff.com/post/</link>
     <description>Recent content in Posts on Josh Kodroff, Technology Craftsman</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <lastBuildDate>Wed, 04 Jul 2018 00:00:00 +0000</lastBuildDate>
     
-	<atom:link href="http://joshkodroff.com/post/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://joshkodroff.com/post/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>CI/CD for Infrastructure as Code with Terraform and Atlantis</title>
-      <link>http://joshkodroff.com/post/2018_07_04_ci_cd_pipeline_terraform_atlantis/</link>
+      <link>https://joshkodroff.com/post/2018_07_04_ci_cd_pipeline_terraform_atlantis/</link>
       <pubDate>Wed, 04 Jul 2018 00:00:00 +0000</pubDate>
       
-      <guid>http://joshkodroff.com/post/2018_07_04_ci_cd_pipeline_terraform_atlantis/</guid>
+      <guid>https://joshkodroff.com/post/2018_07_04_ci_cd_pipeline_terraform_atlantis/</guid>
       <description>In this post, we&amp;rsquo;ll go over a complete workflow for continuous integration (CI) and continuous delivery (CD) for infrastructure as code (IaC) with just 2 tools: Terraform, and Atlantis.
 This post originally appeared in the 2nd Watch Company Blog.
 What is Terraform? So what is Terraform? According to the Terraform website:
@@ -25,39 +25,39 @@ What is Terraform? So what is Terraform? According to the Terraform website:
     
     <item>
       <title>Terraform Repository Structure</title>
-      <link>http://joshkodroff.com/post/2018_07_04_terraform_repo_structure/</link>
+      <link>https://joshkodroff.com/post/2018_07_04_terraform_repo_structure/</link>
       <pubDate>Wed, 04 Jul 2018 00:00:00 +0000</pubDate>
       
-      <guid>http://joshkodroff.com/post/2018_07_04_terraform_repo_structure/</guid>
+      <guid>https://joshkodroff.com/post/2018_07_04_terraform_repo_structure/</guid>
       <description>When IT organizations adopt infrastructure as code (IaC), the benefits in productivity, quality, and ability to function at scale are manifold. However, the first few steps on the journey to full automation and immutable infrastructure bliss can be a major disruption to a more traditional IT operations team&amp;rsquo;s established ways of working. One of common problems faced in adopting infrastructure as code is how to structure the files within a repository in a consistent, intuitive, and scaleable manner.</description>
     </item>
     
     <item>
       <title>Barcamp 2017 Talk - All About DevOps</title>
-      <link>http://joshkodroff.com/post/2017_10_16_barcamp-2017-talk/</link>
+      <link>https://joshkodroff.com/post/2017_10_16_barcamp-2017-talk/</link>
       <pubDate>Mon, 16 Oct 2017 17:55:13 -0400</pubDate>
       
-      <guid>http://joshkodroff.com/post/2017_10_16_barcamp-2017-talk/</guid>
+      <guid>https://joshkodroff.com/post/2017_10_16_barcamp-2017-talk/</guid>
       <description>Here are the slides from my BarCamp Philly 2017 talk &amp;ldquo;All About DevOps&amp;rdquo;. We got into what the DevOps movement is, what benefits it can bring, and touched on how you might get started at your organization.
  </description>
     </item>
     
     <item>
       <title>Barcamp 2015 Talk Slides: Bronze Bullet Architecture</title>
-      <link>http://joshkodroff.com/2016/03/20/barcamp-2015-talk-slides-bronze-bullet-architecture/</link>
+      <link>https://joshkodroff.com/2016/03/20/barcamp-2015-talk-slides-bronze-bullet-architecture/</link>
       <pubDate>Sun, 20 Mar 2016 21:04:32 +0000</pubDate>
       
-      <guid>http://joshkodroff.com/2016/03/20/barcamp-2015-talk-slides-bronze-bullet-architecture/</guid>
+      <guid>https://joshkodroff.com/2016/03/20/barcamp-2015-talk-slides-bronze-bullet-architecture/</guid>
       <description>Way back in November, I gave a talk at BarCamp Philly. BarCamp Philly is a local unconference and one of my favorite events in the Philly tech community. If you&amp;rsquo;re in Philly, or a few hours&amp;rsquo; drive away, you should definitely check it out. There&amp;rsquo;s all kinds of talks on all types of subjects, from the technical to the decidedly non-technical.
 In the talk I gave, I coined the phrase &amp;ldquo;Bronze Bullet Architecture&amp;rdquo; to describe my technical approach to building message-based, domain-driven line of business software, and explained you how my professional experience helped me arrive at this style.</description>
     </item>
     
     <item>
       <title>An Elegant Abandoned Cart Email Using NServiceBus</title>
-      <link>http://joshkodroff.com/2015/08/21/an-elegant-abandoned-cart-email-using-nservicebus/</link>
+      <link>https://joshkodroff.com/2015/08/21/an-elegant-abandoned-cart-email-using-nservicebus/</link>
       <pubDate>Fri, 21 Aug 2015 20:30:59 +0000</pubDate>
       
-      <guid>http://joshkodroff.com/2015/08/21/an-elegant-abandoned-cart-email-using-nservicebus/</guid>
+      <guid>https://joshkodroff.com/2015/08/21/an-elegant-abandoned-cart-email-using-nservicebus/</guid>
       <description>&lt;h2 id=&#34;abstract&#34;&gt;Abstract&lt;/h2&gt;
 
 &lt;p&gt;Some of the toughest requirements to model in enterprise development are business rules that involve the dimension of time.  In this post I&amp;rsquo;ll show you how to fulfill those types of requirements in an elegant, testable, and scalable way using a message-driven style with &lt;a href=&#34;http://particular.net/nservicebus&#34;&gt;NServiceBus&lt;/a&gt;.&lt;/p&gt;
@@ -71,10 +71,10 @@ In the talk I gave, I coined the phrase &amp;ldquo;Bronze Bullet Architecture&am
     
     <item>
       <title>Making Entity Framework More Unit-Testable</title>
-      <link>http://joshkodroff.com/2015/08/08/making-entity-framework-more-testable/</link>
+      <link>https://joshkodroff.com/2015/08/08/making-entity-framework-more-testable/</link>
       <pubDate>Sat, 08 Aug 2015 09:56:22 +0000</pubDate>
       
-      <guid>http://joshkodroff.com/2015/08/08/making-entity-framework-more-testable/</guid>
+      <guid>https://joshkodroff.com/2015/08/08/making-entity-framework-more-testable/</guid>
       <description>&lt;h2 id=&#34;abstract&#34;&gt;Abstract&lt;/h2&gt;
 
 &lt;p&gt;For developers using &lt;a href=&#34;https://entityframework.codeplex.com/&#34;&gt;Entity Framework&lt;/a&gt;, unit testing code that depends on the &lt;code&gt;DbContext&lt;/code&gt; class is not the easiest thing.  If we&amp;rsquo;re interested in doing unit testing, we need to be able to use an in-memory (&amp;ldquo;fake&amp;rdquo; in &lt;a href=&#34;http://martinfowler.com/articles/mocksArentStubs.html&#34;&gt;Martin Fowler&amp;rsquo;s terminology&lt;/a&gt;) version of &lt;code&gt;DbContext&lt;/code&gt; comprised of lists of objects so that our tests do not hit the database.  This series of posts takes you through my process in getting to a facade on top of Entity Framework that results in testable code and tests that are fast to write.&lt;/p&gt;
@@ -84,10 +84,10 @@ In the talk I gave, I coined the phrase &amp;ldquo;Bronze Bullet Architecture&am
     
     <item>
       <title>Getting More Inolved with OSS via Up For Grabs</title>
-      <link>http://joshkodroff.com/2015/06/11/getting-more-inolved-with-oss-via-up-for-grabs/</link>
+      <link>https://joshkodroff.com/2015/06/11/getting-more-inolved-with-oss-via-up-for-grabs/</link>
       <pubDate>Thu, 11 Jun 2015 00:00:00 +0000</pubDate>
       
-      <guid>http://joshkodroff.com/2015/06/11/getting-more-inolved-with-oss-via-up-for-grabs/</guid>
+      <guid>https://joshkodroff.com/2015/06/11/getting-more-inolved-with-oss-via-up-for-grabs/</guid>
       <description>&lt;p&gt;I attended the &lt;a href=&#34;http://dotnetfringe.org/&#34;&gt;DotNetFringe&lt;/a&gt; conference in Portland in April, and I met some some fantastic people, learned a ton, and had an overall great time. The conference was focused on open source in the .NET ecosystem, and I&amp;#8217;m definitely a fan of both of those things.&lt;/p&gt;
 
 &lt;p&gt;&lt;/p&gt;</description>
@@ -95,10 +95,10 @@ In the talk I gave, I coined the phrase &amp;ldquo;Bronze Bullet Architecture&am
     
     <item>
       <title>The Josh Test: A Sorta-Objective Way to Analyze New Opportunities</title>
-      <link>http://joshkodroff.com/2014/02/08/the-josh-test-a-sorta-objective-way-to-analyze-new-opportunities/</link>
+      <link>https://joshkodroff.com/2014/02/08/the-josh-test-a-sorta-objective-way-to-analyze-new-opportunities/</link>
       <pubDate>Sat, 08 Feb 2014 00:00:00 +0000</pubDate>
       
-      <guid>http://joshkodroff.com/2014/02/08/the-josh-test-a-sorta-objective-way-to-analyze-new-opportunities/</guid>
+      <guid>https://joshkodroff.com/2014/02/08/the-josh-test-a-sorta-objective-way-to-analyze-new-opportunities/</guid>
       <description>&lt;p&gt;I find myself in the incredibly fortunate position of having a skill set that is greatly in demand. I get calls and emails on a near-daily basis from recruiters for all types of jobs. (If you don&amp;#8217;t think that having recruiters contact you on a daily basis is a good problem to have, I would advise you to consider the employment circumstances of anyone else who is not a medical or IT professional, i.e. the other 99.999% of the world.) While there&amp;#8217;s a lot to like about my current position, it would be foolish to be closed to new opportunities if the right one comes up. But how do I now what &amp;#8220;the right opportunity&amp;#8221; looks like? My answer: The Josh Test.&lt;/p&gt;
 
 &lt;p&gt;&lt;/p&gt;</description>
@@ -106,10 +106,10 @@ In the talk I gave, I coined the phrase &amp;ldquo;Bronze Bullet Architecture&am
     
     <item>
       <title>It&#39;s High Time to Make Windows Development Cheaper</title>
-      <link>http://joshkodroff.com/2013/05/14/its-high-time-to-make-windows-development-cheaper/</link>
+      <link>https://joshkodroff.com/2013/05/14/its-high-time-to-make-windows-development-cheaper/</link>
       <pubDate>Tue, 14 May 2013 00:00:00 +0000</pubDate>
       
-      <guid>http://joshkodroff.com/2013/05/14/its-high-time-to-make-windows-development-cheaper/</guid>
+      <guid>https://joshkodroff.com/2013/05/14/its-high-time-to-make-windows-development-cheaper/</guid>
       <description>&lt;p&gt;At work, I use a MacBook Pro and boot into Windows directly using BootCamp. I tried using &lt;a href=&#34;https://www.virtualbox.org/&#34;&gt;VirtualBox&lt;/a&gt; but key bindings not matching up drove me nuts and I was trying to get a project launched on a tight deadline, so I went with what I knew.&lt;/p&gt;
 
 &lt;p&gt;As a reward for launching said project, I got myself a nice new MacBook Pro for home use with a Retina screen, and 16 GB RAM. Professional tools for a professional developer and whatnot.&lt;/p&gt;
@@ -119,10 +119,10 @@ In the talk I gave, I coined the phrase &amp;ldquo;Bronze Bullet Architecture&am
     
     <item>
       <title>DDD Lesson: Break Out Your CRUD</title>
-      <link>http://joshkodroff.com/2013/04/21/ddd-lesson-break-out-your-crud/</link>
+      <link>https://joshkodroff.com/2013/04/21/ddd-lesson-break-out-your-crud/</link>
       <pubDate>Sun, 21 Apr 2013 00:00:00 +0000</pubDate>
       
-      <guid>http://joshkodroff.com/2013/04/21/ddd-lesson-break-out-your-crud/</guid>
+      <guid>https://joshkodroff.com/2013/04/21/ddd-lesson-break-out-your-crud/</guid>
       <description>&lt;p&gt;In my view, there&amp;#8217;s 2 main principles that distinguish Domain-driven design as an approach to solving problems:&lt;/p&gt;
 
 &lt;ol&gt;

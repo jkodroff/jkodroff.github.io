@@ -2,21 +2,21 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Architecture on Josh Kodroff, Technology Craftsman</title>
-    <link>http://joshkodroff.com/categories/architecture/</link>
+    <link>https://joshkodroff.com/categories/architecture/</link>
     <description>Recent content in Architecture on Josh Kodroff, Technology Craftsman</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <lastBuildDate>Sun, 20 Mar 2016 21:04:32 +0000</lastBuildDate>
     
-	<atom:link href="http://joshkodroff.com/categories/architecture/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://joshkodroff.com/categories/architecture/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>Barcamp 2015 Talk Slides: Bronze Bullet Architecture</title>
-      <link>http://joshkodroff.com/2016/03/20/barcamp-2015-talk-slides-bronze-bullet-architecture/</link>
+      <link>https://joshkodroff.com/2016/03/20/barcamp-2015-talk-slides-bronze-bullet-architecture/</link>
       <pubDate>Sun, 20 Mar 2016 21:04:32 +0000</pubDate>
       
-      <guid>http://joshkodroff.com/2016/03/20/barcamp-2015-talk-slides-bronze-bullet-architecture/</guid>
+      <guid>https://joshkodroff.com/2016/03/20/barcamp-2015-talk-slides-bronze-bullet-architecture/</guid>
       <description>Way back in November, I gave a talk at BarCamp Philly. BarCamp Philly is a local unconference and one of my favorite events in the Philly tech community. If you&amp;rsquo;re in Philly, or a few hours&amp;rsquo; drive away, you should definitely check it out. There&amp;rsquo;s all kinds of talks on all types of subjects, from the technical to the decidedly non-technical.
 In the talk I gave, I coined the phrase &amp;ldquo;Bronze Bullet Architecture&amp;rdquo; to describe my technical approach to building message-based, domain-driven line of business software, and explained you how my professional experience helped me arrive at this style.</description>
     </item>

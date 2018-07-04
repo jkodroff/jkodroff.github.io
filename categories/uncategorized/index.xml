@@ -2,21 +2,21 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Uncategorized on Josh Kodroff, Technology Craftsman</title>
-    <link>http://joshkodroff.com/categories/uncategorized/</link>
+    <link>https://joshkodroff.com/categories/uncategorized/</link>
     <description>Recent content in Uncategorized on Josh Kodroff, Technology Craftsman</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <lastBuildDate>Thu, 11 Jun 2015 00:00:00 +0000</lastBuildDate>
     
-	<atom:link href="http://joshkodroff.com/categories/uncategorized/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://joshkodroff.com/categories/uncategorized/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>Getting More Inolved with OSS via Up For Grabs</title>
-      <link>http://joshkodroff.com/2015/06/11/getting-more-inolved-with-oss-via-up-for-grabs/</link>
+      <link>https://joshkodroff.com/2015/06/11/getting-more-inolved-with-oss-via-up-for-grabs/</link>
       <pubDate>Thu, 11 Jun 2015 00:00:00 +0000</pubDate>
       
-      <guid>http://joshkodroff.com/2015/06/11/getting-more-inolved-with-oss-via-up-for-grabs/</guid>
+      <guid>https://joshkodroff.com/2015/06/11/getting-more-inolved-with-oss-via-up-for-grabs/</guid>
       <description>&lt;p&gt;I attended the &lt;a href=&#34;http://dotnetfringe.org/&#34;&gt;DotNetFringe&lt;/a&gt; conference in Portland in April, and I met some some fantastic people, learned a ton, and had an overall great time. The conference was focused on open source in the .NET ecosystem, and I&amp;#8217;m definitely a fan of both of those things.&lt;/p&gt;
 
 &lt;p&gt;&lt;/p&gt;</description>
@@ -24,10 +24,10 @@
     
     <item>
       <title>The Josh Test: A Sorta-Objective Way to Analyze New Opportunities</title>
-      <link>http://joshkodroff.com/2014/02/08/the-josh-test-a-sorta-objective-way-to-analyze-new-opportunities/</link>
+      <link>https://joshkodroff.com/2014/02/08/the-josh-test-a-sorta-objective-way-to-analyze-new-opportunities/</link>
       <pubDate>Sat, 08 Feb 2014 00:00:00 +0000</pubDate>
       
-      <guid>http://joshkodroff.com/2014/02/08/the-josh-test-a-sorta-objective-way-to-analyze-new-opportunities/</guid>
+      <guid>https://joshkodroff.com/2014/02/08/the-josh-test-a-sorta-objective-way-to-analyze-new-opportunities/</guid>
       <description>&lt;p&gt;I find myself in the incredibly fortunate position of having a skill set that is greatly in demand. I get calls and emails on a near-daily basis from recruiters for all types of jobs. (If you don&amp;#8217;t think that having recruiters contact you on a daily basis is a good problem to have, I would advise you to consider the employment circumstances of anyone else who is not a medical or IT professional, i.e. the other 99.999% of the world.) While there&amp;#8217;s a lot to like about my current position, it would be foolish to be closed to new opportunities if the right one comes up. But how do I now what &amp;#8220;the right opportunity&amp;#8221; looks like? My answer: The Josh Test.&lt;/p&gt;
 
 &lt;p&gt;&lt;/p&gt;</description>
@@ -35,10 +35,10 @@
     
     <item>
       <title>It&#39;s High Time to Make Windows Development Cheaper</title>
-      <link>http://joshkodroff.com/2013/05/14/its-high-time-to-make-windows-development-cheaper/</link>
+      <link>https://joshkodroff.com/2013/05/14/its-high-time-to-make-windows-development-cheaper/</link>
       <pubDate>Tue, 14 May 2013 00:00:00 +0000</pubDate>
       
-      <guid>http://joshkodroff.com/2013/05/14/its-high-time-to-make-windows-development-cheaper/</guid>
+      <guid>https://joshkodroff.com/2013/05/14/its-high-time-to-make-windows-development-cheaper/</guid>
       <description>&lt;p&gt;At work, I use a MacBook Pro and boot into Windows directly using BootCamp. I tried using &lt;a href=&#34;https://www.virtualbox.org/&#34;&gt;VirtualBox&lt;/a&gt; but key bindings not matching up drove me nuts and I was trying to get a project launched on a tight deadline, so I went with what I knew.&lt;/p&gt;
 
 &lt;p&gt;As a reward for launching said project, I got myself a nice new MacBook Pro for home use with a Retina screen, and 16 GB RAM. Professional tools for a professional developer and whatnot.&lt;/p&gt;

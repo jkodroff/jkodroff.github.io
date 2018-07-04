@@ -2,57 +2,57 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Categories on Josh Kodroff, Technology Craftsman</title>
-    <link>http://joshkodroff.com/categories/</link>
+    <link>https://joshkodroff.com/categories/</link>
     <description>Recent content in Categories on Josh Kodroff, Technology Craftsman</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <lastBuildDate>Sun, 20 Mar 2016 21:04:32 +0000</lastBuildDate>
     
-	<atom:link href="http://joshkodroff.com/categories/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://joshkodroff.com/categories/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>Architecture</title>
-      <link>http://joshkodroff.com/categories/architecture/</link>
+      <link>https://joshkodroff.com/categories/architecture/</link>
       <pubDate>Sun, 20 Mar 2016 21:04:32 +0000</pubDate>
       
-      <guid>http://joshkodroff.com/categories/architecture/</guid>
+      <guid>https://joshkodroff.com/categories/architecture/</guid>
       <description></description>
     </item>
     
     <item>
       <title>Domain Driven Design</title>
-      <link>http://joshkodroff.com/categories/domain-driven-design/</link>
+      <link>https://joshkodroff.com/categories/domain-driven-design/</link>
       <pubDate>Sun, 20 Mar 2016 21:04:32 +0000</pubDate>
       
-      <guid>http://joshkodroff.com/categories/domain-driven-design/</guid>
+      <guid>https://joshkodroff.com/categories/domain-driven-design/</guid>
       <description></description>
     </item>
     
     <item>
       <title>Entityframework</title>
-      <link>http://joshkodroff.com/categories/entityframework/</link>
+      <link>https://joshkodroff.com/categories/entityframework/</link>
       <pubDate>Sat, 08 Aug 2015 09:56:22 +0000</pubDate>
       
-      <guid>http://joshkodroff.com/categories/entityframework/</guid>
+      <guid>https://joshkodroff.com/categories/entityframework/</guid>
       <description></description>
     </item>
     
     <item>
       <title>Testing</title>
-      <link>http://joshkodroff.com/categories/testing/</link>
+      <link>https://joshkodroff.com/categories/testing/</link>
       <pubDate>Sat, 08 Aug 2015 09:56:22 +0000</pubDate>
       
-      <guid>http://joshkodroff.com/categories/testing/</guid>
+      <guid>https://joshkodroff.com/categories/testing/</guid>
       <description></description>
     </item>
     
     <item>
       <title>Uncategorized</title>
-      <link>http://joshkodroff.com/categories/uncategorized/</link>
+      <link>https://joshkodroff.com/categories/uncategorized/</link>
       <pubDate>Thu, 11 Jun 2015 00:00:00 +0000</pubDate>
       
-      <guid>http://joshkodroff.com/categories/uncategorized/</guid>
+      <guid>https://joshkodroff.com/categories/uncategorized/</guid>
       <description></description>
     </item>
     
