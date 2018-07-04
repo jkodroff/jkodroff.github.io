@@ -86,7 +86,7 @@
 
 <p>All repositories should also include a <code>.gitignore</code> file with the appropriate settings for Terraform.  <a href="https://github.com/github/gitignore/blob/master/Terraform.gitignore">GitHub&rsquo;s default Terraform .gitignore</a> is a decent starting point, but in most cases you will not want to ignore <code>.tfvars</code> files because they often contain environment-specific parameters that allow for greater code reuse as we will see later.</p>
 
-<h3 id="terraform-roots-and-multiple-environments">Terraform Roots and Multiple Environments</h3>
+<h2 id="terraform-roots-and-multiple-environments">Terraform Roots and Multiple Environments</h2>
 
 <p>A Terraform root is the unit of work for a single <code>terraform apply</code> command.  We group our infrastructure into multiple terraform roots in order to limit our &ldquo;blast radius&rdquo; (the amount of damage a single errant <code>terraform apply</code> can cause).</p>
 
@@ -117,7 +117,7 @@
         │   ├── qa.tfvars
         │   └── staging.tfvars
         └── main.tf</code></pre></div>
-<h3 id="terraform-modules">Terraform modules</h3>
+<h2 id="terraform-modules">Terraform modules</h2>
 
 <p>Terraform modules are self-contained packages of Terraform configurations that are managed as a group. Modules are used to create reusable components, improve organization, and to treat pieces of infrastructure as a black box.  In short, they are the Terraform equivalent of functions or reusable code libraries.</p>
 
@@ -150,7 +150,7 @@
         │   └── subnets.tf
         ├── outputs.tf
         └── variables.tf</code></pre></div>
-<h3 id="terraform-and-other-tools">Terraform and Other Tools</h3>
+<h2 id="terraform-and-other-tools">Terraform and Other Tools</h2>
 
 <p>Terraform is often used in alongside other automation tools within the same repository.  Some frequent collaborators include <a href="https://www.ansible.com/">Ansible</a> for configuration management and <a href="https://www.packer.io/">Packer</a> for compiling identical machine images across multiple virtualization platforms or cloud providers.  When using Terraform in conjunction with other tools within the same repo, 2nd Watch creates a directory per tool from the root of the repo:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sample-repo
@@ -161,7 +161,7 @@
 └── terraform
     ├── modules
     └── roots</code></pre></div>
-<h3 id="putting-it-all-together">Putting it all together</h3>
+<h2 id="putting-it-all-together">Putting it all together</h2>
 
 <p>The following sample illustrates a sample Terraform repository structure with all of the concepts outlined above:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ tree sample-repo/terraform
@@ -222,13 +222,11 @@ terraform
 <ul>
 <li>
 <ul>
-<li><a href="#first-things-first-readme-md-and-gitignore">First Things First: README.md and .gitignore</a>
-<ul>
+<li><a href="#first-things-first-readme-md-and-gitignore">First Things First: README.md and .gitignore</a></li>
 <li><a href="#terraform-roots-and-multiple-environments">Terraform Roots and Multiple Environments</a></li>
 <li><a href="#terraform-modules">Terraform modules</a></li>
 <li><a href="#terraform-and-other-tools">Terraform and Other Tools</a></li>
 <li><a href="#putting-it-all-together">Putting it all together</a></li>
-</ul></li>
 <li><a href="#conclusion">Conclusion</a></li>
 <li><a href="#additional-resources">Additional resources</a></li>
 </ul></li>
