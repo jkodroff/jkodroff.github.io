@@ -1,23 +1,19 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Domain Driven Design on Josh Kodroff, Technology Craftsman</title>
-    <link>https://joshkodroff.com/categories/domain-driven-design/</link>
-    <description>Recent content in Domain Driven Design on Josh Kodroff, Technology Craftsman</description>
+    <title>Domain-driven Design on Josh Kodroff, Technologist</title>
+    <link>https://joshkodroff.com/categories/Domain-driven-Design/</link>
+    <description>Recent content in Domain-driven Design on Josh Kodroff, Technologist</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 20 Mar 2016 21:04:32 +0000</lastBuildDate>
-    
-	<atom:link href="https://joshkodroff.com/categories/domain-driven-design/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <lastBuildDate>Sun, 20 Mar 2016 21:04:32 +0000</lastBuildDate><atom:link href="https://joshkodroff.com/categories/Domain-driven-Design/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Barcamp 2015 Talk Slides: Bronze Bullet Architecture</title>
       <link>https://joshkodroff.com/2016/03/20/barcamp-2015-talk-slides-bronze-bullet-architecture/</link>
       <pubDate>Sun, 20 Mar 2016 21:04:32 +0000</pubDate>
       
       <guid>https://joshkodroff.com/2016/03/20/barcamp-2015-talk-slides-bronze-bullet-architecture/</guid>
-      <description>Way back in November, I gave a talk at BarCamp Philly. BarCamp Philly is a local unconference and one of my favorite events in the Philly tech community. If you&amp;rsquo;re in Philly, or a few hours&amp;rsquo; drive away, you should definitely check it out. There&amp;rsquo;s all kinds of talks on all types of subjects, from the technical to the decidedly non-technical.
+      <description>Way back in November, I gave a talk at BarCamp Philly. BarCamp Philly is a local unconference and one of my favorite events in the Philly tech community. If you&amp;rsquo;re in Philly, or a few hours&#39; drive away, you should definitely check it out. There&amp;rsquo;s all kinds of talks on all types of subjects, from the technical to the decidedly non-technical.
 In the talk I gave, I coined the phrase &amp;ldquo;Bronze Bullet Architecture&amp;rdquo; to describe my technical approach to building message-based, domain-driven line of business software, and explained you how my professional experience helped me arrive at this style.</description>
     </item>
     
@@ -27,14 +23,11 @@ In the talk I gave, I coined the phrase &amp;ldquo;Bronze Bullet Architecture&am
       <pubDate>Sun, 21 Apr 2013 00:00:00 +0000</pubDate>
       
       <guid>https://joshkodroff.com/2013/04/21/ddd-lesson-break-out-your-crud/</guid>
-      <description>&lt;p&gt;In my view, there&amp;#8217;s 2 main principles that distinguish Domain-driven design as an approach to solving problems:&lt;/p&gt;
-
+      <description>&lt;p&gt;In my view, there’s 2 main principles that distinguish Domain-driven design as an approach to solving problems:&lt;/p&gt;
 &lt;ol&gt;
-&lt;li&gt;All solutions to problems are framed in terms of the value delivered to the stakeholders for the effort required.&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;The core of the code is a model of the business process, and it &lt;a href=&#34;https://en.wikipedia.org/wiki/Code_refactoring&#34;&gt;evolves with time&lt;/a&gt; as the  developers&amp;#8217; understanding of the business with time.&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;&lt;/p&gt;</description>
+&lt;li&gt;All solutions to problems are framed in terms of the value delivered to the stakeholders for the effort required.&lt;!-- raw HTML omitted --&gt;&lt;/li&gt;
+&lt;li&gt;The core of the code is a model of the business process, and it &lt;a href=&#34;https://en.wikipedia.org/wiki/Code_refactoring&#34;&gt;evolves with time&lt;/a&gt; as the  developers’ understanding of the business with time.&lt;/li&gt;
+&lt;/ol&gt;</description>
     </item>
     
   </channel>

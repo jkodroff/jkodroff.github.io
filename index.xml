@@ -1,16 +1,12 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Josh Kodroff, Technology Craftsman</title>
+    <title>Josh Kodroff, Technologist</title>
     <link>https://joshkodroff.com/</link>
-    <description>Recent content on Josh Kodroff, Technology Craftsman</description>
+    <description>Recent content on Josh Kodroff, Technologist</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 04 Jul 2018 00:00:00 +0000</lastBuildDate>
-    
-	<atom:link href="https://joshkodroff.com/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <lastBuildDate>Wed, 04 Jul 2018 00:00:00 +0000</lastBuildDate><atom:link href="https://joshkodroff.com/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>CI/CD for Infrastructure as Code with Terraform and Atlantis</title>
       <link>https://joshkodroff.com/post/2018_07_04_ci_cd_pipeline_terraform_atlantis/</link>
@@ -33,13 +29,12 @@ What is Terraform? So what is Terraform? According to the Terraform website:
     </item>
     
     <item>
-      <title>Barcamp 2017 Talk - All About DevOps</title>
+      <title>Barcamp 2017 Talk Slides: All About DevOps</title>
       <link>https://joshkodroff.com/post/2017_10_16_barcamp-2017-talk/</link>
       <pubDate>Mon, 16 Oct 2017 17:55:13 -0400</pubDate>
       
       <guid>https://joshkodroff.com/post/2017_10_16_barcamp-2017-talk/</guid>
-      <description>Here are the slides from my BarCamp Philly 2017 talk &amp;ldquo;All About DevOps&amp;rdquo;. We got into what the DevOps movement is, what benefits it can bring, and touched on how you might get started at your organization.
- </description>
+      <description>Here are the slides from my BarCamp Philly 2017 talk &amp;ldquo;All About DevOps&amp;rdquo;. We got into what the DevOps movement is, what benefits it can bring, and touched on how you might get started at your organization.</description>
     </item>
     
     <item>
@@ -48,7 +43,7 @@ What is Terraform? So what is Terraform? According to the Terraform website:
       <pubDate>Sun, 20 Mar 2016 21:04:32 +0000</pubDate>
       
       <guid>https://joshkodroff.com/2016/03/20/barcamp-2015-talk-slides-bronze-bullet-architecture/</guid>
-      <description>Way back in November, I gave a talk at BarCamp Philly. BarCamp Philly is a local unconference and one of my favorite events in the Philly tech community. If you&amp;rsquo;re in Philly, or a few hours&amp;rsquo; drive away, you should definitely check it out. There&amp;rsquo;s all kinds of talks on all types of subjects, from the technical to the decidedly non-technical.
+      <description>Way back in November, I gave a talk at BarCamp Philly. BarCamp Philly is a local unconference and one of my favorite events in the Philly tech community. If you&amp;rsquo;re in Philly, or a few hours&#39; drive away, you should definitely check it out. There&amp;rsquo;s all kinds of talks on all types of subjects, from the technical to the decidedly non-technical.
 In the talk I gave, I coined the phrase &amp;ldquo;Bronze Bullet Architecture&amp;rdquo; to describe my technical approach to building message-based, domain-driven line of business software, and explained you how my professional experience helped me arrive at this style.</description>
     </item>
     
@@ -59,14 +54,9 @@ In the talk I gave, I coined the phrase &amp;ldquo;Bronze Bullet Architecture&am
       
       <guid>https://joshkodroff.com/2015/08/21/an-elegant-abandoned-cart-email-using-nservicebus/</guid>
       <description>&lt;h2 id=&#34;abstract&#34;&gt;Abstract&lt;/h2&gt;
-
 &lt;p&gt;Some of the toughest requirements to model in enterprise development are business rules that involve the dimension of time.  In this post I&amp;rsquo;ll show you how to fulfill those types of requirements in an elegant, testable, and scalable way using a message-driven style with &lt;a href=&#34;http://particular.net/nservicebus&#34;&gt;NServiceBus&lt;/a&gt;.&lt;/p&gt;
-
-&lt;h2 id=&#34;tl-dr&#34;&gt;tl;dr&lt;/h2&gt;
-
-&lt;p&gt;If you&amp;rsquo;re familiar NServiceBus and specifically its &lt;a href=&#34;docs.particular.net/nservicebus/sagas/&#34;&gt;sagas feature&lt;/a&gt;, you can check out &lt;a href=&#34;https://github.com/jkodroff/nsb-abandoned-cart&#34;&gt;the code on GitHub&lt;/a&gt;.  Of particular interest would be &lt;a href=&#34;https://github.com/jkodroff/nsb-abandoned-cart/blob/master/src/Server/Saga.cs&#34;&gt;the saga&lt;/a&gt; and &lt;a href=&#34;https://github.com/jkodroff/nsb-abandoned-cart/blob/master/src/Server.Tests/SagaTests.cs&#34;&gt;its tests&lt;/a&gt;.  There&amp;rsquo;s also a &lt;a href=&#34;https://github.com/jkodroff/nsb-abandoned-cart/blob/master/src/Client/Program.cs&#34;&gt;console app client&lt;/a&gt; that will let you play around.&lt;/p&gt;
-
-&lt;p&gt;&lt;/p&gt;</description>
+&lt;h2 id=&#34;tldr&#34;&gt;tl;dr&lt;/h2&gt;
+&lt;p&gt;If you&amp;rsquo;re familiar NServiceBus and specifically its &lt;a href=&#34;docs.particular.net/nservicebus/sagas/&#34;&gt;sagas feature&lt;/a&gt;, you can check out &lt;a href=&#34;https://github.com/jkodroff/nsb-abandoned-cart&#34;&gt;the code on GitHub&lt;/a&gt;.  Of particular interest would be &lt;a href=&#34;https://github.com/jkodroff/nsb-abandoned-cart/blob/master/src/Server/Saga.cs&#34;&gt;the saga&lt;/a&gt; and &lt;a href=&#34;https://github.com/jkodroff/nsb-abandoned-cart/blob/master/src/Server.Tests/SagaTests.cs&#34;&gt;its tests&lt;/a&gt;.  There&amp;rsquo;s also a &lt;a href=&#34;https://github.com/jkodroff/nsb-abandoned-cart/blob/master/src/Client/Program.cs&#34;&gt;console app client&lt;/a&gt; that will let you play around.&lt;/p&gt;</description>
     </item>
     
     <item>
@@ -76,10 +66,7 @@ In the talk I gave, I coined the phrase &amp;ldquo;Bronze Bullet Architecture&am
       
       <guid>https://joshkodroff.com/2015/08/08/making-entity-framework-more-testable/</guid>
       <description>&lt;h2 id=&#34;abstract&#34;&gt;Abstract&lt;/h2&gt;
-
-&lt;p&gt;For developers using &lt;a href=&#34;https://entityframework.codeplex.com/&#34;&gt;Entity Framework&lt;/a&gt;, unit testing code that depends on the &lt;code&gt;DbContext&lt;/code&gt; class is not the easiest thing.  If we&amp;rsquo;re interested in doing unit testing, we need to be able to use an in-memory (&amp;ldquo;fake&amp;rdquo; in &lt;a href=&#34;http://martinfowler.com/articles/mocksArentStubs.html&#34;&gt;Martin Fowler&amp;rsquo;s terminology&lt;/a&gt;) version of &lt;code&gt;DbContext&lt;/code&gt; comprised of lists of objects so that our tests do not hit the database.  This series of posts takes you through my process in getting to a facade on top of Entity Framework that results in testable code and tests that are fast to write.&lt;/p&gt;
-
-&lt;p&gt;&lt;/p&gt;</description>
+&lt;p&gt;For developers using &lt;a href=&#34;https://entityframework.codeplex.com/&#34;&gt;Entity Framework&lt;/a&gt;, unit testing code that depends on the &lt;code&gt;DbContext&lt;/code&gt; class is not the easiest thing.  If we&amp;rsquo;re interested in doing unit testing, we need to be able to use an in-memory (&amp;ldquo;fake&amp;rdquo; in &lt;a href=&#34;http://martinfowler.com/articles/mocksArentStubs.html&#34;&gt;Martin Fowler&amp;rsquo;s terminology&lt;/a&gt;) version of &lt;code&gt;DbContext&lt;/code&gt; comprised of lists of objects so that our tests do not hit the database.  This series of posts takes you through my process in getting to a facade on top of Entity Framework that results in testable code and tests that are fast to write.&lt;/p&gt;</description>
     </item>
     
     <item>
@@ -88,9 +75,7 @@ In the talk I gave, I coined the phrase &amp;ldquo;Bronze Bullet Architecture&am
       <pubDate>Thu, 11 Jun 2015 00:00:00 +0000</pubDate>
       
       <guid>https://joshkodroff.com/2015/06/11/getting-more-inolved-with-oss-via-up-for-grabs/</guid>
-      <description>&lt;p&gt;I attended the &lt;a href=&#34;http://dotnetfringe.org/&#34;&gt;DotNetFringe&lt;/a&gt; conference in Portland in April, and I met some some fantastic people, learned a ton, and had an overall great time. The conference was focused on open source in the .NET ecosystem, and I&amp;#8217;m definitely a fan of both of those things.&lt;/p&gt;
-
-&lt;p&gt;&lt;/p&gt;</description>
+      <description>&lt;p&gt;I attended the &lt;a href=&#34;http://dotnetfringe.org/&#34;&gt;DotNetFringe&lt;/a&gt; conference in Portland in April, and I met some some fantastic people, learned a ton, and had an overall great time. The conference was focused on open source in the .NET ecosystem, and I’m definitely a fan of both of those things.&lt;/p&gt;</description>
     </item>
     
     <item>
@@ -99,9 +84,7 @@ In the talk I gave, I coined the phrase &amp;ldquo;Bronze Bullet Architecture&am
       <pubDate>Sat, 08 Feb 2014 00:00:00 +0000</pubDate>
       
       <guid>https://joshkodroff.com/2014/02/08/the-josh-test-a-sorta-objective-way-to-analyze-new-opportunities/</guid>
-      <description>&lt;p&gt;I find myself in the incredibly fortunate position of having a skill set that is greatly in demand. I get calls and emails on a near-daily basis from recruiters for all types of jobs. (If you don&amp;#8217;t think that having recruiters contact you on a daily basis is a good problem to have, I would advise you to consider the employment circumstances of anyone else who is not a medical or IT professional, i.e. the other 99.999% of the world.) While there&amp;#8217;s a lot to like about my current position, it would be foolish to be closed to new opportunities if the right one comes up. But how do I now what &amp;#8220;the right opportunity&amp;#8221; looks like? My answer: The Josh Test.&lt;/p&gt;
-
-&lt;p&gt;&lt;/p&gt;</description>
+      <description>&lt;p&gt;I find myself in the incredibly fortunate position of having a skill set that is greatly in demand. I get calls and emails on a near-daily basis from recruiters for all types of jobs. (If you don’t think that having recruiters contact you on a daily basis is a good problem to have, I would advise you to consider the employment circumstances of anyone else who is not a medical or IT professional, i.e. the other 99.999% of the world.) While there’s a lot to like about my current position, it would be foolish to be closed to new opportunities if the right one comes up. But how do I now what “the right opportunity” looks like? My answer: The Josh Test.&lt;/p&gt;</description>
     </item>
     
     <item>
@@ -111,10 +94,7 @@ In the talk I gave, I coined the phrase &amp;ldquo;Bronze Bullet Architecture&am
       
       <guid>https://joshkodroff.com/2013/05/14/its-high-time-to-make-windows-development-cheaper/</guid>
       <description>&lt;p&gt;At work, I use a MacBook Pro and boot into Windows directly using BootCamp. I tried using &lt;a href=&#34;https://www.virtualbox.org/&#34;&gt;VirtualBox&lt;/a&gt; but key bindings not matching up drove me nuts and I was trying to get a project launched on a tight deadline, so I went with what I knew.&lt;/p&gt;
-
-&lt;p&gt;As a reward for launching said project, I got myself a nice new MacBook Pro for home use with a Retina screen, and 16 GB RAM. Professional tools for a professional developer and whatnot.&lt;/p&gt;
-
-&lt;p&gt;&lt;/p&gt;</description>
+&lt;p&gt;As a reward for launching said project, I got myself a nice new MacBook Pro for home use with a Retina screen, and 16 GB RAM. Professional tools for a professional developer and whatnot.&lt;/p&gt;</description>
     </item>
     
     <item>
@@ -123,34 +103,22 @@ In the talk I gave, I coined the phrase &amp;ldquo;Bronze Bullet Architecture&am
       <pubDate>Sun, 21 Apr 2013 00:00:00 +0000</pubDate>
       
       <guid>https://joshkodroff.com/2013/04/21/ddd-lesson-break-out-your-crud/</guid>
-      <description>&lt;p&gt;In my view, there&amp;#8217;s 2 main principles that distinguish Domain-driven design as an approach to solving problems:&lt;/p&gt;
-
+      <description>&lt;p&gt;In my view, there’s 2 main principles that distinguish Domain-driven design as an approach to solving problems:&lt;/p&gt;
 &lt;ol&gt;
-&lt;li&gt;All solutions to problems are framed in terms of the value delivered to the stakeholders for the effort required.&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;The core of the code is a model of the business process, and it &lt;a href=&#34;https://en.wikipedia.org/wiki/Code_refactoring&#34;&gt;evolves with time&lt;/a&gt; as the  developers&amp;#8217; understanding of the business with time.&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;&lt;/p&gt;</description>
+&lt;li&gt;All solutions to problems are framed in terms of the value delivered to the stakeholders for the effort required.&lt;!-- raw HTML omitted --&gt;&lt;/li&gt;
+&lt;li&gt;The core of the code is a model of the business process, and it &lt;a href=&#34;https://en.wikipedia.org/wiki/Code_refactoring&#34;&gt;evolves with time&lt;/a&gt; as the  developers’ understanding of the business with time.&lt;/li&gt;
+&lt;/ol&gt;</description>
     </item>
     
     <item>
-      <title>About Me</title>
+      <title>About</title>
       <link>https://joshkodroff.com/about/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://joshkodroff.com/about/</guid>
-      <description>My name is Josh Kodroff and I&amp;rsquo;m a technolgy craftsman living in Philadelphia. Craftsmanship, to me, means 3 things:
- An increased emphasis on quality in order to deliver the best long-term value to stakeholders. Empathy for my teammates, users, and clients. A commitment to continuously improving my skills, both technical and interpersonal.  I spent the first 12 years of my career in software development with an emphasis on message-driven architectures, domain-driven design, continuous integration/delivery, and agile (small &amp;ldquo;a&amp;rdquo;) tools and techniques.</description>
-    </item>
-    
-    <item>
-      <title>Contact Me</title>
-      <link>https://joshkodroff.com/contact/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://joshkodroff.com/contact/</guid>
-      <description>If you&amp;rsquo;d like to get in contact with me, I can be found on the following sites:
- Twitter: @joshkodroff GitHub: jkodroff LinkedIn  Or if you like, you can fill out this form to get in contact with me directly.</description>
+      <description>Josh Kodroff is a technologist living in Philadelphia. He works as a Sr Cloud Consultant at 2nd Watch, a professional services and managed cloud provider with organizations in all stages of cloud adoption, from startups to large enterprises, with a focus on software delivery and application modernization.
+Josh strives to express his dedication to craftsmanship in 3 ways:
+ An emphasis on quality and integrity in order to deliver the best long-term value to stakeholders.</description>
     </item>
     
   </channel>

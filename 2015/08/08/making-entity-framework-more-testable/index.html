@@ -1,32 +1,31 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Making Entity Framework More Unit-Testable // Josh Kodroff, Technology Craftsman</title>
+    <title>Making Entity Framework More Unit-Testable // Josh Kodroff, Technologist</title>
 
-        <meta charset="utf-8">
+    <meta charset="utf-8">
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
-    <meta name="description" content="">
-    <meta name="keywords" content="">
-    <meta name="author" content="">
+    
+    
+    
+
         <meta property="og:title" content="Making Entity Framework More Unit-Testable" />
     <meta property="og:description" content="" />
     <meta property="og:type" content="website" />
-    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale" content="en" />
     <meta property="og:url" content="https://joshkodroff.com/2015/08/08/making-entity-framework-more-testable/" />
     
 
-    <link href="" rel="alternate" type="application/rss+xml" title="Josh Kodroff, Technology Craftsman" />
-    <link rel="shortcut icon" href="/favicon.png">
+    <link rel="shortcut icon" href="/favicon.ico">
 
     <link href="https://joshkodroff.com/webfonts/ptserif/main.css" rel='stylesheet' type='text/css'>
     <link href="https://joshkodroff.com/webfonts/source-code-pro/main.css" rel="stylesheet" type="text/css">
 
     <link rel="stylesheet" href="https://joshkodroff.com/css/style.css">
-
-    <link href="http://gmpg.org/xfn/11" rel="profile">
     
-    <meta name="generator" content="Hugo 0.42.2" />
+
+    <meta name="generator" content="Hugo 0.82.0" />
 </head>
 
 
@@ -36,12 +35,10 @@
     <div id="header-outer" class="outer">
         <div id="header-inner" class="inner">
             <a id="main-nav-toggle" class="nav-icon" href="javascript:;"></a>
-            <a id="logo" class="logo-text" href="https://joshkodroff.com/">Josh Kodroff, Technology Craftsman</a>
+            <a id="logo" class="logo-text" href="https://joshkodroff.com/">Josh Kodroff, Technologist</a>
             <nav id="main-nav">
                 
                 <a class="main-nav-link" href="/about">About</a>
-                
-                <a class="main-nav-link" href="/contact">Contact</a>
                 
             </nav>
             <nav id="sub-nav">
@@ -51,6 +48,7 @@
         </div>
     </div>
 </header>
+
     <section id="main" class="outer">
         <article class="article article-type-post" itemscope itemprop="blogPost">
     <div class="article-inner">
@@ -62,40 +60,29 @@
         
         <div class="article-entry" itemprop="articleBody">
             <h2 id="abstract">Abstract</h2>
-
 <p>For developers using <a href="https://entityframework.codeplex.com/">Entity Framework</a>, unit testing code that depends on the <code>DbContext</code> class is not the easiest thing.  If we&rsquo;re interested in doing unit testing, we need to be able to use an in-memory (&ldquo;fake&rdquo; in <a href="http://martinfowler.com/articles/mocksArentStubs.html">Martin Fowler&rsquo;s terminology</a>) version of <code>DbContext</code> comprised of lists of objects so that our tests do not hit the database.  This series of posts takes you through my process in getting to a facade on top of Entity Framework that results in testable code and tests that are fast to write.</p>
-
-<p></p>
-
 <p><em>Note:</em> The issues described are only known to apply to Entity Framework &lt;= 6.x.  EF 7 is a complete rewrite, and things are very different.  See <a href="#entity-framework-7">here</a> for more details.</p>
-
-<h2 id="tl-dr">tl;dr</h2>
-
+<h2 id="tldr">tl;dr</h2>
 <p>You can jump directly to <a href="https://github.com/jkodroff/ef-testable">the code</a>, or you can reference <a href="https://www.nuget.org/packages/EntityFrameworkTestable/">the client code NuGet package</a> in your main assemblies and <a href="https://www.nuget.org/packages/EntityFrameworkTestable.Testing/">the testing code NuGet package</a> in your testing assemblies.</p>
-
-<h2 id="part-1-getting-to-a-reusable-abstraction">Part 1 - Getting to a Reusable Abstraction</h2>
-
+<h2 id="part-1---getting-to-a-reusable-abstraction">Part 1 - Getting to a Reusable Abstraction</h2>
 <p>We want to depend on interfaces instead of concrete implementations, per the &ldquo;D&rdquo; (<a href="https://en.wikipedia.org/wiki/Dependency_inversion_principle">Dependency Inversion</a>) in <a href="https://en.wikipedia.org/wiki/SOLID_(object-oriented_design)">SOLID</a>.  So how can we do this with Entity Framework?</p>
-
 <p>Let&rsquo;s suppose we have the following <code>DbContext</code>:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">MyDbContext</span> : DbContext 
 {
   <span style="color:#66d9ef">public</span> DbSet&lt;Order&gt; Orders { <span style="color:#66d9ef">get</span>; <span style="color:#66d9ef">set</span>; }
   <span style="color:#75715e">// a bunch of other tables...
-</span><span style="color:#75715e"></span>}</code></pre></div>
-<p>&hellip; we might be consuming it like this:</p>
+</span><span style="color:#75715e"></span>}
+</code></pre></div><p>&hellip; we might be consuming it like this:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> db = <span style="color:#66d9ef">new</span> MyDbContext();
-<span style="color:#66d9ef">var</span> order = db.Orders.Single(x =&gt; x.Id == id);</code></pre></div>
-<p>&hellip; so if we naively extract an interface, then it will lead to something like this:</p>
+<span style="color:#66d9ef">var</span> order = db.Orders.Single(x =&gt; x.Id == id);
+</code></pre></div><p>&hellip; so if we naively extract an interface, then it will lead to something like this:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">interface</span> IMyDbContext
 {
   DbSet&lt;Order&gt; Orders { <span style="color:#66d9ef">get</span>; <span style="color:#66d9ef">set</span>; }
   <span style="color:#75715e">// a bunch of other tables
-</span><span style="color:#75715e"></span>}</code></pre></div>
-<p>And that&rsquo;s not so good.</p>
-
+</span><span style="color:#75715e"></span>}
+</code></pre></div><p>And that&rsquo;s not so good.</p>
 <p>We have to change <code>IMyDbContext</code> along with <code>MyDbContext</code> every time we add a table to the database: We would have to add <code>DbSet&lt;T&gt;</code> properties to both the interface and the implementation.  We also cannot reuse this code across projects because our interface is tightly coupled to the particular database schema we&rsquo;re using.</p>
-
 <p>Fortunately, <code>DbContext</code> exposes a <code>Set&lt;T&gt;()</code> method (<a href="https://msdn.microsoft.com/en-us/library/Gg696521%28v=VS.113%29.aspx">MSDN Docs</a>) which can help us solve this problem.  So, if we change how we consume our <code>DbContext</code> from <code>db.Orders</code> to <code>db.Set&lt;Order&gt;()</code>, we can now define our interface like this:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">interface</span> IDataSession : IDisposable
 {
@@ -105,9 +92,9 @@
 </span><span style="color:#75715e"></span>  <span style="color:#66d9ef">void</span> SaveChanges();
 
   <span style="color:#75715e">// I also have use cases where I need to drop down to raw SQL, so:
-</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">int</span> SqlCommand(<span style="color:#66d9ef">string</span> sql, <span style="color:#66d9ef">params</span> <span style="color:#66d9ef">object</span><span style="color:#a6e22e">[]</span> parameters);
-}</code></pre></div>
-<p>The name change on the interface from <code>IMyDbContext</code> to <code>IDataSession</code> is intentional: it reflects that this interface is no longer a representation of a <em>particular</em> database context (i.e. <code>MyDbContext</code>), but <em>any</em> database context.  And we can create an implementation for it like so:</p>
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">int</span> SqlCommand(<span style="color:#66d9ef">string</span> sql, <span style="color:#66d9ef">params</span> <span style="color:#66d9ef">object</span>[] parameters);
+}
+</code></pre></div><p>The name change on the interface from <code>IMyDbContext</code> to <code>IDataSession</code> is intentional: it reflects that this interface is no longer a representation of a <em>particular</em> database context (i.e. <code>MyDbContext</code>), but <em>any</em> database context.  And we can create an implementation for it like so:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">EntityDataSession</span> : IDataSession
 {
     <span style="color:#75715e">// This is the EF class, not ours:
@@ -133,18 +120,18 @@
         _dbContext.SaveChanges();
     }
 
-    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">int</span> SqlCommand(<span style="color:#66d9ef">string</span> sql, <span style="color:#66d9ef">params</span> <span style="color:#66d9ef">object</span><span style="color:#a6e22e">[]</span> parameters)
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">int</span> SqlCommand(<span style="color:#66d9ef">string</span> sql, <span style="color:#66d9ef">params</span> <span style="color:#66d9ef">object</span>[] parameters)
     {
         <span style="color:#66d9ef">return</span> _dbContext.Database.ExecuteSqlCommand(sql, parameters);
     }
-}</code></pre></div>
-<p>We can use our DI container to give us an <code>EntityDataSession</code> with whatever <code>DbContext</code> we want, and we can reuse this code across projects.  The code below is for <a href="http://docs.structuremap.net/">StructureMap</a>) but your DI container should have similar constructs:</p>
+}
+</code></pre></div><p>We can use our DI container to give us an <code>EntityDataSession</code> with whatever <code>DbContext</code> we want, and we can reuse this code across projects.  The code below is for <a href="http://docs.structuremap.net/">StructureMap</a>) but your DI container should have similar constructs:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#75715e">// Somewhere in your application&#39;s startup code:
 </span><span style="color:#75715e"></span>For&lt;IDataSession&gt;().Use&lt;EntityDataSession&gt;();
 
 <span style="color:#75715e">// Because EntityDataSession takes a DbContext as a constructor param:
-</span><span style="color:#75715e"></span>For&lt;System.Data.Entity.DbContext&gt;().Use&lt;MyDbContext&gt;();</code></pre></div>
-<p>And we might consume our code like this.  (Sending your data model directly to a view is not advisable for production-quality code, but this is just an example):</p>
+</span><span style="color:#75715e"></span>For&lt;System.Data.Entity.DbContext&gt;().Use&lt;MyDbContext&gt;();
+</code></pre></div><p>And we might consume our code like this.  (Sending your data model directly to a view is not advisable for production-quality code, but this is just an example):</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">SomeController</span> : Controller 
 {
     <span style="color:#66d9ef">private</span> IDataSession _dataSession;
@@ -156,11 +143,9 @@
     <span style="color:#66d9ef">public</span> ActionResult Index() {
         <span style="color:#66d9ef">return</span> View(_dataSession.Set&lt;Orders&gt;())
     }
-}</code></pre></div>
-<h2 id="part-2-testing">Part 2 - Testing</h2>
-
+}
+</code></pre></div><h2 id="part-2---testing">Part 2 - Testing</h2>
 <p>We want to be able to write our tests with a minimum of incidental complexity.  In other words, we want to be able to create an in-memory implementation of <code>IDataSession</code>, specifying the tables and entities we need for the test - no more, and no less.  In order to provide a super-simple interface for our tests, we need to hide some complexity within our <code>IDataSession</code> wrapper.</p>
-
 <p>Unfortunately, I was not able to accomplish this succintly without including a mocking library, albeit <a href="http://www.moqthis.com/">a very nicely written one</a>).  Any suggestions for improvement here would be greatly appreciated.  The implementation follows:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#75715e">// Only to be included in test assemblies:
 </span><span style="color:#75715e"></span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">DataHelper</span>
@@ -170,12 +155,12 @@
         <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">new</span> MockDataSession();
     }
 
-    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> IDataSession Session&lt;T&gt;(<span style="color:#66d9ef">params</span> T<span style="color:#a6e22e">[]</span> <span style="color:#66d9ef">set</span>) <span style="color:#66d9ef">where</span> T : <span style="color:#66d9ef">class</span>
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> IDataSession Session&lt;T&gt;(<span style="color:#66d9ef">params</span> T[] <span style="color:#66d9ef">set</span>) <span style="color:#66d9ef">where</span> T : <span style="color:#66d9ef">class</span>
     {
         <span style="color:#66d9ef">return</span> Session().AddSet(<span style="color:#66d9ef">set</span>);
     }
 
-    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> IDataSession AddSet&lt;T&gt;(<span style="color:#66d9ef">this</span> IDataSession session, <span style="color:#66d9ef">params</span> T<span style="color:#a6e22e">[]</span> <span style="color:#66d9ef">set</span>) <span style="color:#66d9ef">where</span> T : <span style="color:#66d9ef">class</span>
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> IDataSession AddSet&lt;T&gt;(<span style="color:#66d9ef">this</span> IDataSession session, <span style="color:#66d9ef">params</span> T[] <span style="color:#66d9ef">set</span>) <span style="color:#66d9ef">where</span> T : <span style="color:#66d9ef">class</span>
     {
         (session <span style="color:#66d9ef">as</span> MockDataSession)
             .Mock
@@ -203,7 +188,7 @@
 
         <span style="color:#75715e">// This doesn&#39;t seem to be something that&#39;s really testable,
 </span><span style="color:#75715e"></span>        <span style="color:#75715e">// so we&#39;ll concede this and throw an exception:
-</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">public</span> IEnumerable&lt;T&gt; SqlQuery&lt;T&gt;(<span style="color:#66d9ef">string</span> sql, <span style="color:#66d9ef">params</span> <span style="color:#66d9ef">object</span><span style="color:#a6e22e">[]</span> parameters)
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">public</span> IEnumerable&lt;T&gt; SqlQuery&lt;T&gt;(<span style="color:#66d9ef">string</span> sql, <span style="color:#66d9ef">params</span> <span style="color:#66d9ef">object</span>[] parameters)
         {
             <span style="color:#66d9ef">throw</span> <span style="color:#66d9ef">new</span> NotImplementedException();
         }
@@ -211,11 +196,9 @@
         <span style="color:#75715e">// There&#39;s nothing to &#34;save&#34;, per se so it&#39;s just a NOOP
 </span><span style="color:#75715e"></span>        <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> SaveChanges() { }
     }
-}</code></pre></div>
-<h2 id="part-3-putting-it-all-together">Part 3 - Putting it All Together</h2>
-
+}
+</code></pre></div><h2 id="part-3---putting-it-all-together">Part 3 - Putting it All Together</h2>
 <p>Now that we have structured our client code so that it depends on interfaces instead of implementations, and we have an in-memory version of <code>IDataStore</code>, we can create tests that are fast to write, fast to execute, and test the necessary behavior of our program.  Here&rsquo;s an example of how we can do this:</p>
-
 <p>Let&rsquo;s suppose we have a business rule that states &ldquo;customers on credit hold cannot place new orders&rdquo; (because they haven&rsquo;t paid their bills).  That rule might give us a controller that looks like this:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">OrdersController</span> : Controller 
 {
@@ -236,12 +219,12 @@
             CustomerId = customerId;  
         });
     }
-}</code></pre></div>
-<p>We can now write a test for this controller like this (the assertion syntax comes from <a href="http://www.fluentassertions.com/">FluentAssertions</a>):</p>
+}
+</code></pre></div><p>We can now write a test for this controller like this (the assertion syntax comes from <a href="http://www.fluentassertions.com/">FluentAssertions</a>):</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#a6e22e">[TestFixture]</span>
 <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">OrdersControllerTests</span>
-{<span style="color:#a6e22e">
-</span><span style="color:#a6e22e">    [Test]</span>
+{
+<span style="color:#a6e22e">    [Test]</span>
     <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> New_CustomerOnCreditHold()
     {
         <span style="color:#66d9ef">var</span> customerId = Guid.NewGuid();
@@ -258,18 +241,13 @@
 </span><span style="color:#75715e"></span>            <span style="color:#75715e">// FluentAssertions will accept wildcard characters for
 </span><span style="color:#75715e"></span>            <span style="color:#75715e">// matching exception text.
 </span><span style="color:#75715e"></span>    }
-}</code></pre></div>
-<p>And that&rsquo;s it!</p>
-
+}
+</code></pre></div><p>And that&rsquo;s it!</p>
 <h2 id="conclusion">Conclusion</h2>
-
 <p>Entity Framework can be a useful tool in the toolbelt, but it requires a little bit of work on top to keep your code testable.  Doing that work is well worth the gains in the ability to write tests that are fast to write, fast to execute, and let you focus on the business logic of your application.</p>
-
-<p><a name="entity-framework-7"></a>
+<p><!-- raw HTML omitted --><!-- raw HTML omitted -->
 Happy coding!</p>
-
 <h2 id="update-2015-11-26-a-note-on-entity-framework-7">UPDATE 2015-11-26: A Note on Entity Framework 7</h2>
-
 <p>I tried updating the code to use Entity Framework 7 and found that things are quite different, as one would expect with a complete rewrite.  This isn&rsquo;t the most informed advice as I&rsquo;ve only worked with EF 7 for a few hours, but it looks like the problems this code solves are now covered by the <a href="https://www.nuget.org/packages/EntityFramework.InMemory">EntityFramework.InMemory</a> package.</p>
         </div>
 
@@ -278,18 +256,15 @@ Happy coding!</p>
         <div class="article-toc" >
             <h3>Contents</h3>
             <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li><a href="#abstract">Abstract</a></li>
-<li><a href="#tl-dr">tl;dr</a></li>
-<li><a href="#part-1-getting-to-a-reusable-abstraction">Part 1 - Getting to a Reusable Abstraction</a></li>
-<li><a href="#part-2-testing">Part 2 - Testing</a></li>
-<li><a href="#part-3-putting-it-all-together">Part 3 - Putting it All Together</a></li>
-<li><a href="#conclusion">Conclusion</a></li>
-<li><a href="#update-2015-11-26-a-note-on-entity-framework-7">UPDATE 2015-11-26: A Note on Entity Framework 7</a></li>
-</ul></li>
-</ul>
+  <ul>
+    <li><a href="#abstract">Abstract</a></li>
+    <li><a href="#tldr">tl;dr</a></li>
+    <li><a href="#part-1---getting-to-a-reusable-abstraction">Part 1 - Getting to a Reusable Abstraction</a></li>
+    <li><a href="#part-2---testing">Part 2 - Testing</a></li>
+    <li><a href="#part-3---putting-it-all-together">Part 3 - Putting it All Together</a></li>
+    <li><a href="#conclusion">Conclusion</a></li>
+    <li><a href="#update-2015-11-26-a-note-on-entity-framework-7">UPDATE 2015-11-26: A Note on Entity Framework 7</a></li>
+  </ul>
 </nav>
         </div>
         
@@ -303,12 +278,34 @@ Happy coding!</p>
 </article>
 
         
+            <div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "joshkodroff" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+        
     </section>
     <footer id="footer">
     <div class="outer">
         <div id="footer-info" class="inner">
-            &copy; 2018 Josh Kodroff, Technology Craftsman&nbsp;
-            Powered by <a href="https://gohugo.io" target="_blank">Hugo</a> with theme <a href="https://github.com/carsonip/hugo-theme-minos">Minos</a>
+            &copy; 2021 Josh Kodroff, Technologist
+            <br />
+            Powered by <a href="https://gohugo.io" target="_blank">Hugo</a> with theme <a href="https://github.com/carsonip/hugo-theme-minos" target="_blank">Minos</a>
         </div>
     </div>
     
@@ -329,6 +326,7 @@ Happy coding!</p>
         });
     </script>
 </footer>
+
 </div>
 </body>
 </html>

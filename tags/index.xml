@@ -1,14 +1,10 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Tags on Josh Kodroff, Technology Craftsman</title>
+    <title>Tags on Josh Kodroff, Technologist</title>
     <link>https://joshkodroff.com/tags/</link>
-    <description>Recent content in Tags on Josh Kodroff, Technology Craftsman</description>
+    <description>Recent content in Tags on Josh Kodroff, Technologist</description>
     <generator>Hugo -- gohugo.io</generator>
-    <language>en-us</language>
-    
-	<atom:link href="https://joshkodroff.com/tags/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <language>en-us</language><atom:link href="https://joshkodroff.com/tags/index.xml" rel="self" type="application/rss+xml" />
   </channel>
 </rss>

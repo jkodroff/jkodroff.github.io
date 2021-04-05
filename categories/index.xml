@@ -1,18 +1,14 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Categories on Josh Kodroff, Technology Craftsman</title>
+    <title>Categories on Josh Kodroff, Technologist</title>
     <link>https://joshkodroff.com/categories/</link>
-    <description>Recent content in Categories on Josh Kodroff, Technology Craftsman</description>
+    <description>Recent content in Categories on Josh Kodroff, Technologist</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 20 Mar 2016 21:04:32 +0000</lastBuildDate>
-    
-	<atom:link href="https://joshkodroff.com/categories/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <lastBuildDate>Sun, 20 Mar 2016 21:04:32 +0000</lastBuildDate><atom:link href="https://joshkodroff.com/categories/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Architecture</title>
+      <title>architecture</title>
       <link>https://joshkodroff.com/categories/architecture/</link>
       <pubDate>Sun, 20 Mar 2016 21:04:32 +0000</pubDate>
       
@@ -21,16 +17,16 @@
     </item>
     
     <item>
-      <title>Domain Driven Design</title>
-      <link>https://joshkodroff.com/categories/domain-driven-design/</link>
+      <title>Domain-driven Design</title>
+      <link>https://joshkodroff.com/categories/Domain-driven-Design/</link>
       <pubDate>Sun, 20 Mar 2016 21:04:32 +0000</pubDate>
       
-      <guid>https://joshkodroff.com/categories/domain-driven-design/</guid>
+      <guid>https://joshkodroff.com/categories/Domain-driven-Design/</guid>
       <description></description>
     </item>
     
     <item>
-      <title>Entityframework</title>
+      <title>entityframework</title>
       <link>https://joshkodroff.com/categories/entityframework/</link>
       <pubDate>Sat, 08 Aug 2015 09:56:22 +0000</pubDate>
       
@@ -39,7 +35,7 @@
     </item>
     
     <item>
-      <title>Testing</title>
+      <title>testing</title>
       <link>https://joshkodroff.com/categories/testing/</link>
       <pubDate>Sat, 08 Aug 2015 09:56:22 +0000</pubDate>
       
@@ -49,10 +45,10 @@
     
     <item>
       <title>Uncategorized</title>
-      <link>https://joshkodroff.com/categories/uncategorized/</link>
+      <link>https://joshkodroff.com/categories/Uncategorized/</link>
       <pubDate>Thu, 11 Jun 2015 00:00:00 +0000</pubDate>
       
-      <guid>https://joshkodroff.com/categories/uncategorized/</guid>
+      <guid>https://joshkodroff.com/categories/Uncategorized/</guid>
       <description></description>
     </item>
     

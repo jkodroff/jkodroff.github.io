@@ -1,32 +1,31 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>CI/CD for Infrastructure as Code with Terraform and Atlantis // Josh Kodroff, Technology Craftsman</title>
+    <title>CI/CD for Infrastructure as Code with Terraform and Atlantis // Josh Kodroff, Technologist</title>
 
-        <meta charset="utf-8">
+    <meta charset="utf-8">
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
-    <meta name="description" content="">
-    <meta name="keywords" content="">
-    <meta name="author" content="">
+    
+    
+    
+
         <meta property="og:title" content="CI/CD for Infrastructure as Code with Terraform and Atlantis" />
     <meta property="og:description" content="" />
     <meta property="og:type" content="website" />
-    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale" content="en" />
     <meta property="og:url" content="https://joshkodroff.com/post/2018_07_04_ci_cd_pipeline_terraform_atlantis/" />
     
 
-    <link href="" rel="alternate" type="application/rss+xml" title="Josh Kodroff, Technology Craftsman" />
-    <link rel="shortcut icon" href="/favicon.png">
+    <link rel="shortcut icon" href="/favicon.ico">
 
     <link href="https://joshkodroff.com/webfonts/ptserif/main.css" rel='stylesheet' type='text/css'>
     <link href="https://joshkodroff.com/webfonts/source-code-pro/main.css" rel="stylesheet" type="text/css">
 
     <link rel="stylesheet" href="https://joshkodroff.com/css/style.css">
-
-    <link href="http://gmpg.org/xfn/11" rel="profile">
     
-    <meta name="generator" content="Hugo 0.42.2" />
+
+    <meta name="generator" content="Hugo 0.82.0" />
 </head>
 
 
@@ -36,12 +35,10 @@
     <div id="header-outer" class="outer">
         <div id="header-inner" class="inner">
             <a id="main-nav-toggle" class="nav-icon" href="javascript:;"></a>
-            <a id="logo" class="logo-text" href="https://joshkodroff.com/">Josh Kodroff, Technology Craftsman</a>
+            <a id="logo" class="logo-text" href="https://joshkodroff.com/">Josh Kodroff, Technologist</a>
             <nav id="main-nav">
                 
                 <a class="main-nav-link" href="/about">About</a>
-                
-                <a class="main-nav-link" href="/contact">Contact</a>
                 
             </nav>
             <nav id="sub-nav">
@@ -51,6 +48,7 @@
         </div>
     </div>
 </header>
+
     <section id="main" class="outer">
         <article class="article article-type-post" itemscope itemprop="blogPost">
     <div class="article-inner">
@@ -61,78 +59,58 @@
         
         
         <div class="article-entry" itemprop="articleBody">
-            
-
-<p>In this post, we&rsquo;ll go over a complete workflow for continuous integration (CI) and continuous delivery (CD) for infrastructure as code (IaC) with just 2 tools: <a href="https://www.terraform.io/">Terraform</a>, and <a href="https://www.runatlantis.io/">Atlantis</a>.</p>
-
+            <p>In this post, we&rsquo;ll go over a complete workflow for continuous integration (CI) and continuous delivery (CD) for infrastructure as code (IaC) with just 2 tools: <a href="https://www.terraform.io/">Terraform</a>, and <a href="https://www.runatlantis.io/">Atlantis</a>.</p>
 <p>This post originally appeared in the <a href="http://2ndwatch.com/blog/ci-cd-for-infrastructure-as-code-with-terraform-and-atlantis/">2nd Watch Company Blog</a>.</p>
-
 <h2 id="what-is-terraform">What is Terraform?</h2>
-
 <p>So what is Terraform?  According to <a href="https://www.terraform.io/intro/index.html">the Terraform website</a>:</p>
-
 <blockquote>
 <p>Terraform is a tool for building, changing, and versioning infrastructure safely and efficiently. Terraform can manage existing and popular service providers as well as custom in-house solutions.</p>
 </blockquote>
-
 <p>In practice, this means that Terraform allows us to declare what we want our infrastructure to look like (in any cloud provider), and will automatically determine the changes necessary to make it so.  Because of its simple syntax and cross-cloud compatibility, it&rsquo;s 2nd Watch&rsquo;s choice for infrastructure as code.</p>
-
 <h2 id="pain-you-may-be-experiencing-working-with-terraform">Pain You May Be Experiencing Working With Terraform</h2>
-
 <p>Once you have multiple collaborators (individuals, teams, etc.) working on a Terraform codebase, some common problems are likely to emerge:</p>
-
 <ol>
-<li><p><strong>Enforcing peer review becomes difficult.</strong> In any codebase, we&rsquo;ll want to ensure that our code is peer reviewed in order to ensure better quality in accordance with <a href="https://itrevolution.com/the-three-ways-principles-underpinning-devops/">The Second Way of DevOps: Feedback</a>.  The role of peer review in infrastructure as code codebases is even more important.  Infrastructure as code is a powerful tool, but that tool has a double-edge: we are clearly more productive for using it, but that increased productivity also means that a simple typo could potentially cause a major issue with our production infrastructure.</p>
-
-<p>In order to minimize the potential for bad code to be deployed, we want to require peer review on all proposed changes to a codebase (e.g. GitHub Pull Requests with at least one reviewer required).  Terraform&rsquo;s open source offering has no facility to enforce this rule.</p></li>
-
-<li><p><strong>Terraform plan output is not easily integrated in code reviews.</strong> In all code reviews, we must examine the source code to ensure that our standards are followed, that the code is readable, that it&rsquo;s reasonably optimized, etc.  In this aspect, reviewing Terraform code is like reviewing any other code.  However, Terraform code has the unique requirement that <em>we must also examine the effect the code change will have upon our infrastructure</em> (i.e. we must also review the output of a <code>terraform plan</code> command).</p>
-
-<p>When we potentially have multiple feature branches in the review process, it becomes critical that we are assured that the <code>terraform plan</code> output is what will be executed when we run <code>terraform apply</code>.  If the state of infrastructure changes between a run of <code>terraform plan</code> and a run of <code>terraform apply</code>, the effect of this difference in state could range from inconvenient (the apply fails) to catastrophic (a significant production outage).  Terraform itself <a href="https://www.terraform.io/docs/state/locking.html">offers locking capabilities</a>, but does not provide an easy way to integrate locking into a peer review process in its open source product.</p></li>
-
-<li><p><strong>Too many sets of privileged credentials.</strong>  Highly privileged credentials are often required to perform Terraform actions, and the greater the number principals you have with privileged access, the higher your attack surface area becomes.  Therefore, from a security standpoint, we&rsquo;d like to have less sets of admin credentials which can potentially be compromised.</p></li>
+<li>
+<p><strong>Enforcing peer review becomes difficult.</strong> In any codebase, we&rsquo;ll want to ensure that our code is peer reviewed in order to ensure better quality in accordance with <a href="https://itrevolution.com/the-three-ways-principles-underpinning-devops/">The Second Way of DevOps: Feedback</a>.  The role of peer review in infrastructure as code codebases is even more important.  Infrastructure as code is a powerful tool, but that tool has a double-edge: we are clearly more productive for using it, but that increased productivity also means that a simple typo could potentially cause a major issue with our production infrastructure.</p>
+<p>In order to minimize the potential for bad code to be deployed, we want to require peer review on all proposed changes to a codebase (e.g. GitHub Pull Requests with at least one reviewer required).  Terraform&rsquo;s open source offering has no facility to enforce this rule.</p>
+</li>
+<li>
+<p><strong>Terraform plan output is not easily integrated in code reviews.</strong> In all code reviews, we must examine the source code to ensure that our standards are followed, that the code is readable, that it&rsquo;s reasonably optimized, etc.  In this aspect, reviewing Terraform code is like reviewing any other code.  However, Terraform code has the unique requirement that <em>we must also examine the effect the code change will have upon our infrastructure</em> (i.e. we must also review the output of a <code>terraform plan</code> command).</p>
+<p>When we potentially have multiple feature branches in the review process, it becomes critical that we are assured that the <code>terraform plan</code> output is what will be executed when we run <code>terraform apply</code>.  If the state of infrastructure changes between a run of <code>terraform plan</code> and a run of <code>terraform apply</code>, the effect of this difference in state could range from inconvenient (the apply fails) to catastrophic (a significant production outage).  Terraform itself <a href="https://www.terraform.io/docs/state/locking.html">offers locking capabilities</a>, but does not provide an easy way to integrate locking into a peer review process in its open source product.</p>
+</li>
+<li>
+<p><strong>Too many sets of privileged credentials.</strong>  Highly privileged credentials are often required to perform Terraform actions, and the greater the number principals you have with privileged access, the higher your attack surface area becomes.  Therefore, from a security standpoint, we&rsquo;d like to have less sets of admin credentials which can potentially be compromised.</p>
+</li>
 </ol>
-
 <h2 id="what-is-atlantis">What is Atlantis?</h2>
-
 <p>And what is Atlantis?  Atlantis is an open source tool that allows safe collaboration on Terraform projects by making sure that proposed changes are reviewed and that the proposed change is the actual change which will be executed on our infrastructure.  Atlantis is compatible (at the time of writing) with GitHub and Gitlab, so if you&rsquo;re not using either of these Git hosting systems, you won&rsquo;t be able to use Atlantis.</p>
-
 <h2 id="how-atlantis-works-with-terraform">How Atlantis Works With Terraform</h2>
-
 <p>Atlantis is deployed as a single binary executable with no system-wide dependencies.  An operator adds a GitHub or GitLab token for a repository containing Terraform code.  The Atlantis installation process then adds hooks to the repository which allows communication to the Atlantis server during the Pull Request process.</p>
-
 <p>You can run Atlantis in a container or a small virtual machine - the only requirement is that the Terraform instance can communicate with both your version control (e.g. GitHub) and infrastructure you&rsquo;re changing (e.g. AWS).  Once Atlantis is configured for a repository, the typical workflow is:</p>
-
 <ol>
 <li>A developer creates a feature branch in git, makes some changes, and creates a Pull Request (GitHub) or Merge Request (GitLab).</li>
 <li>The developer enters <code>atlantis plan</code> in a PR comment.</li>
 <li>Via the installed web hooks, Atlantis locally runs <code>terraform plan</code>.  If there are no other Pull Requests in progress, Atlantis adds the resulting plan as a comment to the Merge Request.
-
 <ul>
 <li>If there are other Pull Requests in progress, the command fails because we can&rsquo;t ensure that the plan will be valid once applied).</li>
-</ul></li>
+</ul>
+</li>
 <li>The developer ensures the plan looks good and add reviewers to the Merge Request.</li>
 <li>Once the PR has been approved, the developer enters <code>atlantis apply</code> in a PR comment.  This will trigger Atlantis to run <code>terraform apply</code> and the changes will be deployed to your infrastructure.
-
 <ul>
 <li>The command will fail if the Merge Request has not been approved.</li>
-</ul></li>
+</ul>
+</li>
 </ol>
-
 <p>The following sequence diagram illustrates the sequence of actions described above:</p>
-
-<p><img src="/images/atlantis.png" alt="Atlantis sequence diagram" /></p>
-
+<p><img src="/images/atlantis.png" alt="Atlantis sequence diagram"></p>
 <p>We can see how our pain points in Terraform collaboration  are addressed by Atlantis:</p>
-
 <ol>
 <li>In order to enforce code review, we can launch Atlantis with the <code>--require approvals</code> flag: <a href="https://github.com/runatlantis/atlantis#approvals">https://github.com/runatlantis/atlantis#approvals</a></li>
 <li>In order to ensure that our <code>terraform plan</code> accurately reflects the change to our infrastructure that will be made when we run <code>terraform apply</code>, Atlantis performs locking on a project or workspace basis: <a href="https://github.com/runatlantis/atlantis#locking">https://github.com/runatlantis/atlantis#locking</a></li>
 <li>In order to prevent creating multiple sets of privileged credentials, we can (e.g. in AWS) deploy Atlantis to run on an EC2 instance with a privileged IAM role in its <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html">instance profile</a>.  In this way, all of our Terraform commands run through a single set of privileged credentials and obviate the need to distribute multiple sets of privileged credentials: <a href="https://github.com/runatlantis/atlantis#aws-credentials">https://github.com/runatlantis/atlantis#aws-credentials</a></li>
 </ol>
-
 <h2 id="conclusion">Conclusion</h2>
-
 <p>So we can see that with minimal additional infrastructure and we can establish a safe and reliable CI/CD pipeline for our infrastructure as code, enabling us to get more done safely!</p>
 
         </div>
@@ -142,16 +120,13 @@
         <div class="article-toc" >
             <h3>Contents</h3>
             <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li><a href="#what-is-terraform">What is Terraform?</a></li>
-<li><a href="#pain-you-may-be-experiencing-working-with-terraform">Pain You May Be Experiencing Working With Terraform</a></li>
-<li><a href="#what-is-atlantis">What is Atlantis?</a></li>
-<li><a href="#how-atlantis-works-with-terraform">How Atlantis Works With Terraform</a></li>
-<li><a href="#conclusion">Conclusion</a></li>
-</ul></li>
-</ul>
+  <ul>
+    <li><a href="#what-is-terraform">What is Terraform?</a></li>
+    <li><a href="#pain-you-may-be-experiencing-working-with-terraform">Pain You May Be Experiencing Working With Terraform</a></li>
+    <li><a href="#what-is-atlantis">What is Atlantis?</a></li>
+    <li><a href="#how-atlantis-works-with-terraform">How Atlantis Works With Terraform</a></li>
+    <li><a href="#conclusion">Conclusion</a></li>
+  </ul>
 </nav>
         </div>
         
@@ -165,12 +140,34 @@
 </article>
 
         
+            <div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "joshkodroff" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+        
     </section>
     <footer id="footer">
     <div class="outer">
         <div id="footer-info" class="inner">
-            &copy; 2018 Josh Kodroff, Technology Craftsman&nbsp;
-            Powered by <a href="https://gohugo.io" target="_blank">Hugo</a> with theme <a href="https://github.com/carsonip/hugo-theme-minos">Minos</a>
+            &copy; 2021 Josh Kodroff, Technologist
+            <br />
+            Powered by <a href="https://gohugo.io" target="_blank">Hugo</a> with theme <a href="https://github.com/carsonip/hugo-theme-minos" target="_blank">Minos</a>
         </div>
     </div>
     
@@ -191,6 +188,7 @@
         });
     </script>
 </footer>
+
 </div>
 </body>
 </html>
